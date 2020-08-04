@@ -40,6 +40,10 @@ func newByteRef(data []byte, pool *BytePool) *ByteRef {
   }
 }
 
+func (b *ByteRef) Bytes() []byte {
+  return b.B
+}
+
 func (b *ByteRef) setFinalizer() {
   runtime.SetFinalizer(b, finalizeRef)
 }
@@ -66,6 +70,10 @@ func newBufferRef(data *bytes.Buffer, pool *BufferPool) *BufferRef {
   }
 }
 
+func (b *BufferRef) Buffer() *bytes.Buffer {
+  return b.Buf
+}
+
 func (b *BufferRef) setFinalizer() {
   runtime.SetFinalizer(b, finalizeRef)
 }
@@ -86,10 +94,14 @@ type BufioReaderRef struct {
 
 func newBufioReaderRef(data *bufio.Reader, pool *BufioReaderPool) *BufioReaderRef {
   return &BufioReaderRef{
-    Buf:   data,
+    Buf:    data,
     pool:   pool,
     closed: false,
   }
+}
+
+func (b *BufioReaderRef) Reader() *bufio.Reader {
+  return b.Buf
 }
 
 func (b *BufioReaderRef) setFinalizer() {
@@ -116,6 +128,10 @@ func newBufioWriterRef(data *bufio.Writer, pool *BufioWriterPool) *BufioWriterRe
     pool:   pool,
     closed: false,
   }
+}
+
+func (b *BufioWriterRef) Writer() *bufio.Writer {
+  return b.Buf
 }
 
 func (b *BufioWriterRef) setFinalizer() {
@@ -146,6 +162,10 @@ func newImageRGBARef(pix []uint8, img *image.RGBA, pool *ImageRGBAPool) *ImageRG
   }
 }
 
+func (b *ImageRGBARef) Image() *image.RGBA {
+  return b.Img
+}
+
 func (b *ImageRGBARef) setFinalizer() {
   runtime.SetFinalizer(b, finalizeRef)
 }
@@ -173,6 +193,10 @@ func newImageYCbCrRef(pix []uint8, img *image.YCbCr, pool *ImageYCbCrPool) *Imag
     pool:   pool,
     closed: false,
   }
+}
+
+func (b *ImageYCbCrRef) Image() *image.YCbCr {
+  return b.Img
 }
 
 func (b *ImageYCbCrRef) setFinalizer() {
