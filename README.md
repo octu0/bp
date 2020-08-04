@@ -23,6 +23,15 @@ It also provides a MultiPool to bundle multiple pools:
 - MultiImageRGBAPool
 - MultiImageYCbCrPool
 
+In addition, `bp` provides an easy to manipulate object interface to prevent forgetting to put it back into the pool
+
+- `bp.ByteRef`
+- `bp.BufferRef`
+- `bp.BufioReaderRef`
+- `bp.BufioWriterRef`
+- `bp.ImageRGBARef`
+- `bp.ImageYCbCrRef`
+
 ## Installation
 
 ```bash
@@ -46,7 +55,6 @@ func main() {
   // return buffer to pool
   bufpool.Put(buf)
 }
-
 ```
 
 ## License
