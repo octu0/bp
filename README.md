@@ -6,7 +6,7 @@
 [![Releases](https://img.shields.io/github/v/release/octu0/bp)](https://github.com/octu0/chanque/bp)
 
 `bp` implements buffer pool of various objects such as byte array (`[]byte`) or [*bytes.Buffer](http://golang.org/pkg/bytes/#Buffer) / [*image.RGBA](https://golang.org/pkg/image/#RGBA) and [*bufio.Reader](https://golang.org/pkg/bufio/#Reader).  
-Is is inspired by [bpool](https://github.com/oxtoacart/bpool) and is similar in many respects.
+It is inspired by [bpool](https://github.com/oxtoacart/bpool) and its many features are similar.
 
 `bp` provides the following pool types
 - `bp.BufferPool` which provides fixed-size pool of [*bytes.Buffers](http://golang.org/pkg/bytes/#Buffer)
