@@ -51,7 +51,6 @@ func (b *BufferPool) Get() *bytes.Buffer {
   default:
     // create *bytes.Buffer w/ []byte
     data = bytes.NewBuffer(make([]byte, 0, b.bufSize))
-    b.calibrate()
   }
   return data
 }
@@ -61,6 +60,8 @@ func (b *BufferPool) Put(data *bytes.Buffer) bool {
     // increase bufSize to reduce call to internal bytes.grow
     data.Grow(b.bufSize)
   }
+
+  b.calibrate()
   data.Reset()
 
   select {

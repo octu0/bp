@@ -51,7 +51,6 @@ func (b *ImageRGBAPool) GetRef() *ImageRGBARef {
   default:
     // create []uint8
     pix = make([]uint8, b.length)
-    b.calibrate()
   }
   ref := newImageRGBARef(pix, &image.RGBA{
     Pix:    pix,
@@ -67,6 +66,7 @@ func (b *ImageRGBAPool) Put(pix []uint8) bool {
     // discard small buffer
     return false
   }
+  b.calibrate()
 
   select {
   case b.pool <- pix[: b.length]:
@@ -157,7 +157,6 @@ func (b *ImageYCbCrPool) GetRef() *ImageYCbCrRef {
   default:
     // create []uint8
     pix = make([]uint8, b.length)
-    b.calibrate()
   }
   ref := newImageYCbCrRef(pix, &image.YCbCr{
     Y:       pix[0      : b.yIdx : b.yIdx],
@@ -177,6 +176,7 @@ func (b *ImageYCbCrPool) Put(pix []uint8) bool {
     // discard small buffer
     return false
   }
+  b.calibrate()
 
   select {
   case b.pool <- pix[: b.length]:

@@ -59,13 +59,13 @@ func (b *BufioReaderPool) Get(r io.Reader) *bufio.Reader {
   default:
     // create *bufio.Reader
     br = bufio.NewReaderSize(nil, b.bufSize)
-    b.calibrate()
   }
   br.Reset(r)
   return br
 }
 
 func (b *BufioReaderPool) Put(br *bufio.Reader) bool {
+  b.calibrate()
   br.Reset(nil)
 
   select {
@@ -136,13 +136,13 @@ func (b *BufioWriterPool) Get(w io.Writer) *bufio.Writer {
   default:
     // create *bufio.Writer
     bw = bufio.NewWriterSize(nil, b.bufSize)
-    b.calibrate()
   }
   bw.Reset(w)
   return bw
 }
 
 func (b *BufioWriterPool) Put(bw *bufio.Writer) bool {
+  b.calibrate()
   bw.Reset(nil)
 
   select {

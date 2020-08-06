@@ -47,7 +47,6 @@ func (b *BytePool) Get() []byte {
   default:
     // create []byte
     data = make([]byte, b.bufSize)
-    b.calibrate()
   }
   return data
 }
@@ -57,6 +56,8 @@ func (b *BytePool) Put(data []byte) bool {
     // discard small buffer
     return false
   }
+
+  b.calibrate()
 
   select {
   case b.pool <- data[: b.bufSize]:
