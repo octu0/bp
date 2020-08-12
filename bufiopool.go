@@ -12,15 +12,20 @@ const(
 type BufioReaderPool struct {
   pool    chan *bufio.Reader
   bufSize int
+  strict  bool
   ch      CalibrateHandler
 }
 
 func NewBufioReaderPool(poolSize int, funcs ...optionFunc) *BufioReaderPool {
-  return NewBufioReaderSizePool(poolSize, defaultBufioSize, funcs...)
+  return newBufioReaderPool(poolSize, defaultBufioSize, false, funcs...)
 }
 
 func NewBufioReaderSizePool(poolSize int, bufSize int, funcs ...optionFunc) *BufioReaderPool {
-  opt := new(option)
+  return newBufioReaderPool(poolSize, bufSize, true, funcs...)
+}
+
+func newBufioReaderPool(poolSize int, bufSize int, sizeStrict bool, funcs ...optionFunc) *BufioReaderPool {
+  opt := newOption()
   for _, fn := range funcs {
     fn(opt)
   }
@@ -28,6 +33,7 @@ func NewBufioReaderSizePool(poolSize int, bufSize int, funcs ...optionFunc) *Buf
   b := &BufioReaderPool{
     pool:    make(chan *bufio.Reader, poolSize),
     bufSize: bufSize,
+    strict:  sizeStrict,
     ch:      opt.calibrator,
   }
 
@@ -65,8 +71,21 @@ func (b *BufioReaderPool) Get(r io.Reader) *bufio.Reader {
 }
 
 func (b *BufioReaderPool) Put(br *bufio.Reader) bool {
-  b.calibrate()
   br.Reset(nil)
+
+  if br.Size() < b.bufSize {
+    // discard
+    return false
+  }
+
+  if b.bufSize < br.Size() {
+    if b.strict {
+      // discard, same buffer size only
+      return false
+    }
+  }
+
+  b.calibrate()
 
   select {
   case b.pool <- br:
@@ -89,15 +108,20 @@ func (b *BufioReaderPool) Cap() int {
 type BufioWriterPool struct {
   pool    chan *bufio.Writer
   bufSize int
+  strict  bool
   ch      CalibrateHandler
 }
 
 func NewBufioWriterPool(poolSize int, funcs ...optionFunc) *BufioWriterPool {
-  return NewBufioWriterSizePool(poolSize, defaultBufioSize, funcs...)
+  return newBufioWriterPool(poolSize, defaultBufioSize, false, funcs...)
 }
 
 func NewBufioWriterSizePool(poolSize int, bufSize int, funcs ...optionFunc) *BufioWriterPool {
-  opt := new(option)
+  return newBufioWriterPool(poolSize, bufSize, true, funcs...)
+}
+
+func newBufioWriterPool(poolSize int, bufSize int, sizeStrict bool, funcs ...optionFunc) *BufioWriterPool {
+  opt := newOption()
   for _, fn := range funcs {
     fn(opt)
   }
@@ -105,6 +129,7 @@ func NewBufioWriterSizePool(poolSize int, bufSize int, funcs ...optionFunc) *Buf
   b := &BufioWriterPool{
     pool:    make(chan *bufio.Writer, poolSize),
     bufSize: bufSize,
+    strict:  sizeStrict,
     ch:      opt.calibrator,
   }
 
@@ -142,8 +167,21 @@ func (b *BufioWriterPool) Get(w io.Writer) *bufio.Writer {
 }
 
 func (b *BufioWriterPool) Put(bw *bufio.Writer) bool {
-  b.calibrate()
   bw.Reset(nil)
+
+  if bw.Size() < b.bufSize {
+    // discard
+    return false
+  }
+
+  if b.bufSize < bw.Size() {
+    if b.strict {
+      // discard, same buffer size only
+      return false
+    }
+  }
+
+  b.calibrate()
 
   select {
   case b.pool <- bw:
