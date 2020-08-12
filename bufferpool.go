@@ -5,21 +5,26 @@ import(
 )
 
 type BufferPool struct {
-  pool    chan *bytes.Buffer
-  bufSize int
-  ch      CalibrateHandler
+  pool       chan *bytes.Buffer
+  bufSize    int
+  maxBufSize int
+  ch         CalibrateHandler
 }
 
 func NewBufferPool(poolSize int, bufSize int, funcs ...optionFunc) *BufferPool {
-  opt := new(option)
+  opt := newOption()
   for _, fn := range funcs {
     fn(opt)
   }
 
-  b := &BufferPool {
-    pool:    make(chan *bytes.Buffer, poolSize),
-    bufSize: bufSize,
-    ch:      opt.calibrator,
+  b := &BufferPool{
+    pool:       make(chan *bytes.Buffer, poolSize),
+    bufSize:    bufSize,
+    maxBufSize: int(opt.maxBufSizeFactor * float64(bufSize)),
+    ch:         opt.calibrator,
+  }
+  if b.maxBufSize < 1 {
+    b.maxBufSize = bufSize
   }
 
   if opt.preload {
@@ -56,6 +61,11 @@ func (b *BufferPool) Get() *bytes.Buffer {
 }
 
 func (b *BufferPool) Put(data *bytes.Buffer) bool {
+  if b.maxBufSize <= data.Cap() {
+    // discard, dont keep too big size buffer in heap and release it
+    return false
+  }
+
   if data.Cap() < b.bufSize {
     // increase bufSize to reduce call to internal bytes.grow
     data.Grow(b.bufSize)

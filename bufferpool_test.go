@@ -37,11 +37,11 @@ func TestBufferPoolBufSize(t *testing.T) {
   })
   t.Run("getput/largecap", func(tt *testing.T) {
     p := NewBufferPool(10, bufSize)
-    p.Put(bytes.NewBuffer(make([]byte, 0, 123)))
+    p.Put(bytes.NewBuffer(make([]byte, 0, 20)))
 
     d1 := p.Get()
     if d1.Cap() == bufSize {
-      tt.Errorf("manually set buffer capacity be different")
+      tt.Errorf("manually set buffer capacity be different: %d", d1.Cap())
     }
     if d1.Len() != 0 {
       tt.Errorf("manually set buffer be Reset")
@@ -73,11 +73,18 @@ func TestBufferPoolDiscard(t *testing.T) {
     p := NewBufferPool(10, bufSize)
     p.Put(bytes.NewBuffer(make([]byte, 0, bufSize)))
 
-    if p.Put(bytes.NewBuffer(make([]byte, 0, 100))) != true {
-      tt.Errorf("put ok")
+    if p.Put(bytes.NewBuffer(make([]byte, 0, 100))) {
+      tt.Errorf("maxBufSize put ng")
     }
-    if p.Put(bytes.NewBuffer(make([]byte, 100))) != true {
-      tt.Errorf("put ok")
+    if p.Put(bytes.NewBuffer(make([]byte, 100))) {
+      tt.Errorf("maxBufSie put ng")
+    }
+
+    if p.Put(bytes.NewBuffer(make([]byte, 0, 30))) != true {
+      tt.Errorf("less than maxBufSize put no")
+    }
+    if p.Put(bytes.NewBuffer(make([]byte, 30))) != true {
+      tt.Errorf("less than maxBufSie put no")
     }
   })
   t.Run("freecap/smallsize", func(tt *testing.T) {

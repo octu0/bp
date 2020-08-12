@@ -15,7 +15,7 @@ type ImageRGBAPool struct {
 }
 
 func NewImageRGBAPool(poolSize int, rect image.Rectangle, funcs ...optionFunc) *ImageRGBAPool {
-  opt := new(option)
+  opt := newOption()
   for _, fn := range funcs {
     fn(opt)
   }
@@ -86,7 +86,6 @@ func (b *ImageRGBAPool) Cap() int {
   return cap(b.pool)
 }
 
-
 type ImageYCbCrPool struct {
   pool     chan []uint8
   rect     image.Rectangle
@@ -112,7 +111,7 @@ func yuvSize(rect image.Rectangle, sample image.YCbCrSubsampleRatio) (int, int) 
 }
 
 func NewImageYCbCrPool(poolSize int, rect image.Rectangle, sample image.YCbCrSubsampleRatio, funcs ...optionFunc) *ImageYCbCrPool {
-  opt := new(option)
+  opt := newOption()
   for _, fn := range funcs {
     fn(opt)
   }

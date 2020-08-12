@@ -7,7 +7,7 @@ type BytePool struct {
 }
 
 func NewBytePool(poolSize int, bufSize int, funcs ...optionFunc) *BytePool {
-  opt := new(option)
+  opt := newOption()
   for _, fn := range funcs {
     fn(opt)
   }
