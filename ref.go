@@ -8,6 +8,7 @@ import(
 )
 
 type Ref interface {
+  isClosed() bool
   setFinalizer()
   Release()
 }
@@ -44,6 +45,10 @@ func (b *ByteRef) Bytes() []byte {
   return b.B
 }
 
+func (b *ByteRef) isClosed() bool {
+  return b.closed
+}
+
 func (b *ByteRef) setFinalizer() {
   runtime.SetFinalizer(b, finalizeRef)
 }
@@ -72,6 +77,10 @@ func newBufferRef(data *bytes.Buffer, pool *BufferPool) *BufferRef {
 
 func (b *BufferRef) Buffer() *bytes.Buffer {
   return b.Buf
+}
+
+func (b *BufferRef) isClosed() bool {
+  return b.closed
 }
 
 func (b *BufferRef) setFinalizer() {
@@ -104,6 +113,10 @@ func (b *BufioReaderRef) Reader() *bufio.Reader {
   return b.Buf
 }
 
+func (b *BufioReaderRef) isClosed() bool {
+  return b.closed
+}
+
 func (b *BufioReaderRef) setFinalizer() {
   runtime.SetFinalizer(b, finalizeRef)
 }
@@ -132,6 +145,10 @@ func newBufioWriterRef(data *bufio.Writer, pool *BufioWriterPool) *BufioWriterRe
 
 func (b *BufioWriterRef) Writer() *bufio.Writer {
   return b.Buf
+}
+
+func (b *BufioWriterRef) isClosed() bool {
+  return b.closed
 }
 
 func (b *BufioWriterRef) setFinalizer() {
@@ -166,6 +183,10 @@ func (b *ImageRGBARef) Image() *image.RGBA {
   return b.Img
 }
 
+func (b *ImageRGBARef) isClosed() bool {
+  return b.closed
+}
+
 func (b *ImageRGBARef) setFinalizer() {
   runtime.SetFinalizer(b, finalizeRef)
 }
@@ -197,6 +218,10 @@ func newImageYCbCrRef(pix []uint8, img *image.YCbCr, pool *ImageYCbCrPool) *Imag
 
 func (b *ImageYCbCrRef) Image() *image.YCbCr {
   return b.Img
+}
+
+func (b *ImageYCbCrRef) isClosed() bool {
+  return b.closed
 }
 
 func (b *ImageYCbCrRef) setFinalizer() {
