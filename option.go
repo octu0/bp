@@ -2,23 +2,20 @@ package bp
 
 type optionFunc func(*option)
 
+const(
+  defaultPreloadEnable    bool    = false
+  defaultMaxBufSizeFactor float64 = 4.0
+)
+
 type option struct {
-  calibrator       CalibrateHandler
   preload          bool
   maxBufSizeFactor float64
 }
 
 func newOption() *option {
   return &option{
-    calibrator:       nil,
-    preload:          false,
-    maxBufSizeFactor: 4.0,
-  }
-}
-
-func Calibrator(c CalibrateHandler) optionFunc {
-  return func(opt *option) {
-    opt.calibrator = c
+    preload:          defaultPreloadEnable,
+    maxBufSizeFactor: defaultMaxBufSizeFactor,
   }
 }
 

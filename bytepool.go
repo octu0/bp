@@ -3,7 +3,6 @@ package bp
 type BytePool struct {
   pool    chan []byte
   bufSize int
-  ch      CalibrateHandler
 }
 
 func NewBytePool(poolSize int, bufSize int, funcs ...optionFunc) *BytePool {
@@ -15,20 +14,12 @@ func NewBytePool(poolSize int, bufSize int, funcs ...optionFunc) *BytePool {
   b := &BytePool{
     pool:    make(chan []byte, poolSize),
     bufSize: bufSize,
-    ch:      opt.calibrator,
   }
 
   if opt.preload {
-    b.calibrate()
   }
 
   return b
-}
-
-func (b *BytePool) calibrate() {
-  if b.ch != nil {
-    b.ch.CalibrateBytePool(b)
-  }
 }
 
 func (b *BytePool) GetRef() *ByteRef {
@@ -56,8 +47,6 @@ func (b *BytePool) Put(data []byte) bool {
     // discard small buffer
     return false
   }
-
-  b.calibrate()
 
   select {
   case b.pool <- data[: b.bufSize]:

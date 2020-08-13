@@ -11,7 +11,6 @@ type ImageRGBAPool struct {
   height int
   stride int
   length int
-  ch     CalibrateHandler
 }
 
 func NewImageRGBAPool(poolSize int, rect image.Rectangle, funcs ...optionFunc) *ImageRGBAPool {
@@ -27,20 +26,12 @@ func NewImageRGBAPool(poolSize int, rect image.Rectangle, funcs ...optionFunc) *
     height: rect.Dy(),
     stride: rect.Dx() * 4,
     length: rect.Dx() * rect.Dy() * 4,
-    ch:     opt.calibrator,
   }
 
   if opt.preload {
-    b.calibrate()
   }
 
   return b
-}
-
-func (b *ImageRGBAPool) calibrate() {
-  if b.ch != nil {
-    b.ch.CalibrateImageRGBAPool(b)
-  }
 }
 
 func (b *ImageRGBAPool) GetRef() *ImageRGBARef {
@@ -66,7 +57,6 @@ func (b *ImageRGBAPool) Put(pix []uint8) bool {
     // discard small buffer
     return false
   }
-  b.calibrate()
 
   select {
   case b.pool <- pix[: b.length]:
@@ -96,7 +86,6 @@ type ImageYCbCrPool struct {
   strideY  int
   strideUV int
   length   int
-  ch       CalibrateHandler
 }
 
 func yuvSize(rect image.Rectangle, sample image.YCbCrSubsampleRatio) (int, int) {
@@ -132,20 +121,12 @@ func NewImageYCbCrPool(poolSize int, rect image.Rectangle, sample image.YCbCrSub
     strideY:  y,
     strideUV: uv,
     length:   i2,
-    ch:       opt.calibrator,
   }
 
   if opt.preload {
-    b.calibrate()
   }
 
   return b
-}
-
-func (b *ImageYCbCrPool) calibrate() {
-  if b.ch != nil {
-    b.ch.CalibrateImageYCbCrPool(b)
-  }
 }
 
 func (b *ImageYCbCrPool) GetRef() *ImageYCbCrRef {
@@ -175,7 +156,6 @@ func (b *ImageYCbCrPool) Put(pix []uint8) bool {
     // discard small buffer
     return false
   }
-  b.calibrate()
 
   select {
   case b.pool <- pix[: b.length]:

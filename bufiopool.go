@@ -13,7 +13,6 @@ type BufioReaderPool struct {
   pool    chan *bufio.Reader
   bufSize int
   strict  bool
-  ch      CalibrateHandler
 }
 
 func NewBufioReaderPool(poolSize int, funcs ...optionFunc) *BufioReaderPool {
@@ -34,19 +33,11 @@ func newBufioReaderPool(poolSize int, bufSize int, sizeStrict bool, funcs ...opt
     pool:    make(chan *bufio.Reader, poolSize),
     bufSize: bufSize,
     strict:  sizeStrict,
-    ch:      opt.calibrator,
   }
 
   if opt.preload {
-    b.calibrate()
   }
   return b
-}
-
-func (b *BufioReaderPool) calibrate() {
-  if b.ch != nil {
-    b.ch.CalibrateBufioReaderPool(b)
-  }
 }
 
 func (b *BufioReaderPool) GetRef(r io.Reader) *BufioReaderRef {
@@ -85,8 +76,6 @@ func (b *BufioReaderPool) Put(br *bufio.Reader) bool {
     }
   }
 
-  b.calibrate()
-
   select {
   case b.pool <- br:
     // free capacity
@@ -109,7 +98,6 @@ type BufioWriterPool struct {
   pool    chan *bufio.Writer
   bufSize int
   strict  bool
-  ch      CalibrateHandler
 }
 
 func NewBufioWriterPool(poolSize int, funcs ...optionFunc) *BufioWriterPool {
@@ -130,19 +118,11 @@ func newBufioWriterPool(poolSize int, bufSize int, sizeStrict bool, funcs ...opt
     pool:    make(chan *bufio.Writer, poolSize),
     bufSize: bufSize,
     strict:  sizeStrict,
-    ch:      opt.calibrator,
   }
 
   if opt.preload {
-    b.calibrate()
   }
   return b
-}
-
-func (b *BufioWriterPool) calibrate() {
-  if b.ch != nil {
-    b.ch.CalibrateBufioWriterPool(b)
-  }
 }
 
 func (b *BufioWriterPool) GetRef(w io.Writer) *BufioWriterRef {
@@ -180,8 +160,6 @@ func (b *BufioWriterPool) Put(bw *bufio.Writer) bool {
       return false
     }
   }
-
-  b.calibrate()
 
   select {
   case b.pool <- bw:

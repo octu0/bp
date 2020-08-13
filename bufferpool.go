@@ -8,7 +8,6 @@ type BufferPool struct {
   pool       chan *bytes.Buffer
   bufSize    int
   maxBufSize int
-  ch         CalibrateHandler
 }
 
 func NewBufferPool(poolSize int, bufSize int, funcs ...optionFunc) *BufferPool {
@@ -21,23 +20,15 @@ func NewBufferPool(poolSize int, bufSize int, funcs ...optionFunc) *BufferPool {
     pool:       make(chan *bytes.Buffer, poolSize),
     bufSize:    bufSize,
     maxBufSize: int(opt.maxBufSizeFactor * float64(bufSize)),
-    ch:         opt.calibrator,
   }
   if b.maxBufSize < 1 {
     b.maxBufSize = bufSize
   }
 
   if opt.preload {
-    b.calibrate()
   }
 
   return b
-}
-
-func (b *BufferPool) calibrate() {
-  if b.ch != nil {
-    b.ch.CalibrateBufferPool(b)
-  }
 }
 
 func (b *BufferPool) GetRef() *BufferRef {
@@ -71,7 +62,6 @@ func (b *BufferPool) Put(data *bytes.Buffer) bool {
     data.Grow(b.bufSize)
   }
 
-  b.calibrate()
   data.Reset()
 
   select {
