@@ -4,6 +4,10 @@ import(
   "image"
 )
 
+const(
+  notyetSupportedSampleRate string = "not yet supported sample rate"
+)
+
 type ImageRGBAPool struct {
   pool   chan []uint8
   rect   image.Rectangle
@@ -103,6 +107,10 @@ func NewImageYCbCrPool(poolSize int, rect image.Rectangle, sample image.YCbCrSub
   opt := newOption()
   for _, fn := range funcs {
     fn(opt)
+  }
+
+  if sample != image.YCbCrSubsampleRatio420 {
+    panic(notyetSupportedSampleRate)
   }
 
   w, h  := rect.Dx(), rect.Dy()
