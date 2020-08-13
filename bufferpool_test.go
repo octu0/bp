@@ -173,3 +173,11 @@ func TestBufferPoolLenCap(t *testing.T) {
     }
   })
 }
+
+func TestBufferPoolPreload(t *testing.T) {
+  p := NewBufferPool(12, 8, Preload(true))
+  l := int(float64(12) * defaultPreloadRate)
+  if p.Len() != l {
+    t.Errorf("preloaded buffer = %d", p.Len())
+  }
+}

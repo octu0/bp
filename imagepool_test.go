@@ -306,3 +306,21 @@ func TestYCbCrPoolPanic(t *testing.T) {
     _ = NewImageYCbCrPool(10, rect, i410)
   })
 }
+
+func TestImageRGBAPoolPreload(t *testing.T) {
+  r := image.Rect(0, 0, 100, 100)
+  p := NewImageRGBAPool(12, r, Preload(true))
+  l := int(float64(12) * defaultPreloadRate)
+  if p.Len() != l {
+    t.Errorf("preloaded buffer = %d", p.Len())
+  }
+}
+
+func TestImageYCbCrPoolPreload(t *testing.T) {
+  r := image.Rect(0, 0, 100, 100)
+  p := NewImageYCbCrPool(12, r, image.YCbCrSubsampleRatio420, Preload(true))
+  l := int(float64(12) * defaultPreloadRate)
+  if p.Len() != l {
+    t.Errorf("preloaded buffer = %d", p.Len())
+  }
+}

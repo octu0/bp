@@ -26,6 +26,7 @@ func NewBufferPool(poolSize int, bufSize int, funcs ...optionFunc) *BufferPool {
   }
 
   if opt.preload {
+    b.preload(opt.preloadRate)
   }
 
   return b
@@ -37,6 +38,15 @@ func (b *BufferPool) GetRef() *BufferRef {
   ref := newBufferRef(data, b)
   ref.setFinalizer()
   return ref
+}
+
+func (b *BufferPool) preload(rate float64) {
+  if 0 < cap(b.pool) {
+    preloadSize := int(float64(cap(b.pool)) * rate)
+    for i := 0; i < preloadSize; i += 1 {
+      b.Put(bytes.NewBuffer(make([]byte, 0, b.bufSize)))
+    }
+  }
 }
 
 func (b *BufferPool) Get() *bytes.Buffer {

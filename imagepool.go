@@ -33,6 +33,7 @@ func NewImageRGBAPool(poolSize int, rect image.Rectangle, funcs ...optionFunc) *
   }
 
   if opt.preload {
+    b.preload(opt.preloadRate)
   }
 
   return b
@@ -54,6 +55,15 @@ func (b *ImageRGBAPool) GetRef() *ImageRGBARef {
   }, b)
   ref.setFinalizer()
   return ref
+}
+
+func (b *ImageRGBAPool) preload(rate float64) {
+  if 0 < cap(b.pool) {
+    preloadSize := int(float64(cap(b.pool)) * rate)
+    for i := 0; i < preloadSize; i += 1 {
+      b.Put(make([]uint8, b.length))
+    }
+  }
 }
 
 func (b *ImageRGBAPool) Put(pix []uint8) bool {
@@ -132,6 +142,7 @@ func NewImageYCbCrPool(poolSize int, rect image.Rectangle, sample image.YCbCrSub
   }
 
   if opt.preload {
+    b.preload(opt.preloadRate)
   }
 
   return b
@@ -157,6 +168,15 @@ func (b *ImageYCbCrPool) GetRef() *ImageYCbCrRef {
   }, b)
   ref.setFinalizer()
   return ref
+}
+
+func (b *ImageYCbCrPool) preload(rate float64) {
+  if 0 < cap(b.pool) {
+    preloadSize := int(float64(cap(b.pool)) * rate)
+    for i := 0; i < preloadSize; i += 1 {
+      b.Put(make([]uint8, b.length))
+    }
+  }
 }
 
 func (b *ImageYCbCrPool) Put(pix []uint8) bool {

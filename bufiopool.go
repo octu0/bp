@@ -36,6 +36,7 @@ func newBufioReaderPool(poolSize int, bufSize int, sizeStrict bool, funcs ...opt
   }
 
   if opt.preload {
+    b.preload(opt.preloadRate)
   }
   return b
 }
@@ -46,6 +47,15 @@ func (b *BufioReaderPool) GetRef(r io.Reader) *BufioReaderRef {
   ref := newBufioReaderRef(data, b)
   ref.setFinalizer()
   return ref
+}
+
+func (b *BufioReaderPool) preload(rate float64) {
+  if 0 < cap(b.pool) {
+    preloadSize := int(float64(cap(b.pool)) * rate)
+    for i := 0; i < preloadSize; i += 1 {
+      b.Put(bufio.NewReaderSize(nil, b.bufSize))
+    }
+  }
 }
 
 func (b *BufioReaderPool) Get(r io.Reader) *bufio.Reader {
@@ -121,6 +131,7 @@ func newBufioWriterPool(poolSize int, bufSize int, sizeStrict bool, funcs ...opt
   }
 
   if opt.preload {
+    b.preload(opt.preloadRate)
   }
   return b
 }
@@ -131,6 +142,15 @@ func (b *BufioWriterPool) GetRef(w io.Writer) *BufioWriterRef {
   ref := newBufioWriterRef(data, b)
   ref.setFinalizer()
   return ref
+}
+
+func (b *BufioWriterPool) preload(rate float64) {
+  if 0 < cap(b.pool) {
+    preloadSize := int(float64(cap(b.pool)) * rate)
+    for i := 0; i < preloadSize; i += 1 {
+      b.Put(bufio.NewWriterSize(nil, b.bufSize))
+    }
+  }
 }
 
 func (b *BufioWriterPool) Get(w io.Writer) *bufio.Writer {

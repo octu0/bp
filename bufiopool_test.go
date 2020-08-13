@@ -406,3 +406,19 @@ func TestBufioPoolLenCap(t *testing.T) {
     }
   })
 }
+
+func TestBufioReaderPoolPreload(t *testing.T) {
+  p := NewBufioReaderPool(12, Preload(true))
+  l := int(float64(12) * defaultPreloadRate)
+  if p.Len() != l {
+    t.Errorf("preloaded buffer = %d", p.Len())
+  }
+}
+
+func TestBufioWriterPoolPreload(t *testing.T) {
+  p := NewBufioWriterPool(12, Preload(true))
+  l := int(float64(12) * defaultPreloadRate)
+  if p.Len() != l {
+    t.Errorf("preloaded buffer = %d", p.Len())
+  }
+}
