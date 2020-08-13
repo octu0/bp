@@ -17,6 +17,20 @@ type ImageRGBAPool struct {
   length int
 }
 
+func rgbaStride(rect image.Rectangle) int {
+  return rect.Dx() * 4
+}
+
+func rgbaLength(rect image.Rectangle) int {
+  return rect.Dx() * rect.Dy() * 4
+}
+
+func ycbcrLength(rect image.Rectangle, sample image.YCbCrSubsampleRatio) int {
+  w, h  := rect.Dx(), rect.Dy()
+  y, uv := yuvSize(rect, sample)
+  return (w * h) + (2 * y * uv)
+}
+
 func NewImageRGBAPool(poolSize int, rect image.Rectangle, funcs ...optionFunc) *ImageRGBAPool {
   opt := newOption()
   for _, fn := range funcs {
@@ -25,18 +39,34 @@ func NewImageRGBAPool(poolSize int, rect image.Rectangle, funcs ...optionFunc) *
 
   b := &ImageRGBAPool{
     pool:   make(chan []uint8, poolSize),
-    rect:   rect,
-    width:  rect.Dx(),
-    height: rect.Dy(),
-    stride: rect.Dx() * 4,
-    length: rect.Dx() * rect.Dy() * 4,
+    // other field initialize to b.init(rect, sample)
   }
+  b.init(rect)
 
   if opt.preload {
     b.preload(opt.preloadRate)
   }
 
   return b
+}
+
+func (b *ImageRGBAPool) init(rect image.Rectangle) {
+  b.rect   = rect
+  b.width  = rect.Dx()
+  b.height = rect.Dy()
+  b.stride = rgbaStride(rect)
+  b.length = rgbaLength(rect)
+}
+
+
+func (b *ImageRGBAPool) createImageRGBARef(pix []uint8, pool *ImageRGBAPool) *ImageRGBARef {
+  ref := newImageRGBARef(pix, &image.RGBA{
+    Pix:    pix,
+    Stride: b.stride,
+    Rect:   b.rect,
+  }, pool)
+  ref.setFinalizer()
+  return ref
 }
 
 func (b *ImageRGBAPool) GetRef() *ImageRGBARef {
@@ -48,13 +78,7 @@ func (b *ImageRGBAPool) GetRef() *ImageRGBARef {
     // create []uint8
     pix = make([]uint8, b.length)
   }
-  ref := newImageRGBARef(pix, &image.RGBA{
-    Pix:    pix,
-    Stride: b.stride,
-    Rect:   b.rect,
-  }, b)
-  ref.setFinalizer()
-  return ref
+  return b.createImageRGBARef(pix, b)
 }
 
 func (b *ImageRGBAPool) preload(rate float64) {
@@ -122,30 +146,47 @@ func NewImageYCbCrPool(poolSize int, rect image.Rectangle, sample image.YCbCrSub
   if sample != image.YCbCrSubsampleRatio420 {
     panic(notyetSupportedSampleRate)
   }
+  b  := &ImageYCbCrPool{
+    pool:  make(chan []uint8, poolSize),
+    // other field initialize to b.init(rect, sample)
+  }
+  b.init(rect, sample)
 
+  if opt.preload {
+    b.preload(opt.preloadRate)
+  }
+  return b
+}
+func (b *ImageYCbCrPool) init(rect image.Rectangle, sample image.YCbCrSubsampleRatio) {
   w, h  := rect.Dx(), rect.Dy()
   y, uv := yuvSize(rect, sample)
 
   i0 := (w * h) + (0 * y * uv)
   i1 := (w * h) + (1 * y * uv)
   i2 := (w * h) + (2 * y * uv)
-  b  := &ImageYCbCrPool{
-    pool:     make(chan []uint8, poolSize),
-    rect:     rect,
-    sample:   sample,
-    yIdx:     i0,
-    uIdx:     i1,
-    vIdx:     i2,
-    strideY:  y,
-    strideUV: uv,
-    length:   i2,
-  }
 
-  if opt.preload {
-    b.preload(opt.preloadRate)
-  }
+  b.rect     = rect
+  b.sample   = sample
+  b.yIdx     = i0
+  b.uIdx     = i1
+  b.vIdx     = i2
+  b.strideY  = y
+  b.strideUV = uv
+  b.length   =  ycbcrLength(rect, sample)
+}
 
-  return b
+func (b *ImageYCbCrPool) createImageYCbCrRef(pix []uint8, pool *ImageYCbCrPool) *ImageYCbCrRef {
+  ref := newImageYCbCrRef(pix, &image.YCbCr{
+    Y:       pix[0      : b.yIdx : b.yIdx],
+    Cb:      pix[b.yIdx : b.uIdx : b.uIdx],
+    Cr:      pix[b.uIdx : b.vIdx : b.vIdx],
+    YStride: b.strideY,
+    CStride: b.strideUV,
+    Rect:    b.rect,
+    SubsampleRatio: b.sample,
+  }, pool)
+  ref.setFinalizer()
+  return ref
 }
 
 func (b *ImageYCbCrPool) GetRef() *ImageYCbCrRef {
@@ -157,17 +198,7 @@ func (b *ImageYCbCrPool) GetRef() *ImageYCbCrRef {
     // create []uint8
     pix = make([]uint8, b.length)
   }
-  ref := newImageYCbCrRef(pix, &image.YCbCr{
-    Y:       pix[0      : b.yIdx : b.yIdx],
-    Cb:      pix[b.yIdx : b.uIdx : b.uIdx],
-    Cr:      pix[b.uIdx : b.vIdx : b.vIdx],
-    YStride: b.strideY,
-    CStride: b.strideUV,
-    Rect:    b.rect,
-    SubsampleRatio: b.sample,
-  }, b)
-  ref.setFinalizer()
-  return ref
+  return b.createImageYCbCrRef(pix, b)
 }
 
 func (b *ImageYCbCrPool) preload(rate float64) {
