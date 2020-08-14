@@ -17,20 +17,6 @@ type ImageRGBAPool struct {
   length int
 }
 
-func rgbaStride(rect image.Rectangle) int {
-  return rect.Dx() * 4
-}
-
-func rgbaLength(rect image.Rectangle) int {
-  return rect.Dx() * rect.Dy() * 4
-}
-
-func ycbcrLength(rect image.Rectangle, sample image.YCbCrSubsampleRatio) int {
-  w, h  := rect.Dx(), rect.Dy()
-  y, uv := yuvSize(rect, sample)
-  return (w * h) + (2 * y * uv)
-}
-
 func NewImageRGBAPool(poolSize int, rect image.Rectangle, funcs ...optionFunc) *ImageRGBAPool {
   opt := newOption()
   for _, fn := range funcs {
@@ -54,10 +40,9 @@ func (b *ImageRGBAPool) init(rect image.Rectangle) {
   b.rect   = rect
   b.width  = rect.Dx()
   b.height = rect.Dy()
-  b.stride = rgbaStride(rect)
-  b.length = rgbaLength(rect)
+  b.stride = rect.Dx() * 4
+  b.length = rect.Dx() * rect.Dy() * 4
 }
-
 
 func (b *ImageRGBAPool) createImageRGBARef(pix []uint8, pool *ImageRGBAPool) *ImageRGBARef {
   ref := newImageRGBARef(pix, &image.RGBA{
@@ -172,7 +157,7 @@ func (b *ImageYCbCrPool) init(rect image.Rectangle, sample image.YCbCrSubsampleR
   b.vIdx     = i2
   b.strideY  = y
   b.strideUV = uv
-  b.length   =  ycbcrLength(rect, sample)
+  b.length   = i2
 }
 
 func (b *ImageYCbCrPool) createImageYCbCrRef(pix []uint8, pool *ImageYCbCrPool) *ImageYCbCrRef {
