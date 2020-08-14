@@ -21,6 +21,7 @@ func NewBufferPool(poolSize int, bufSize int, funcs ...optionFunc) *BufferPool {
     bufSize:    bufSize,
     maxBufSize: int(opt.maxBufSizeFactor * float64(bufSize)),
   }
+
   if b.maxBufSize < 1 {
     b.maxBufSize = bufSize
   }
