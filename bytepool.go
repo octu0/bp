@@ -1,8 +1,9 @@
 package bp
 
 type BytePool struct {
-  pool    chan []byte
-  bufSize int
+  pool       chan []byte
+  bufSize    int
+  maxBufSize int
 }
 
 func NewBytePool(poolSize int, bufSize int, funcs ...optionFunc) *BytePool {
@@ -12,8 +13,13 @@ func NewBytePool(poolSize int, bufSize int, funcs ...optionFunc) *BytePool {
   }
 
   b := &BytePool{
-    pool:    make(chan []byte, poolSize),
-    bufSize: bufSize,
+    pool:       make(chan []byte, poolSize),
+    bufSize:    bufSize,
+    maxBufSize: int(opt.maxBufSizeFactor * float64(bufSize)),
+  }
+
+  if b.maxBufSize < 1 {
+    b.maxBufSize = bufSize
   }
 
   if opt.preload {
@@ -53,6 +59,11 @@ func (b *BytePool) Get() []byte {
 }
 
 func (b *BytePool) Put(data []byte) bool {
+  if b.maxBufSize <= cap(data) {
+    // discard, dont keep too big size byte in heap and release it
+    return false
+  }
+
   if cap(data) < b.bufSize {
     // discard small buffer
     return false

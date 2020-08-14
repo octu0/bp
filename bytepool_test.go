@@ -38,11 +38,11 @@ func TestBytePoolBufSize(t *testing.T) {
     p.Put(make([]byte, 123))
 
     d1 := p.Get()
-    if cap(d1) == bufSize {
-      tt.Errorf("manually set buffer capacity be different")
+    if cap(d1) != bufSize {
+      tt.Errorf("discard over max buf 123 byte")
     }
     if len(d1) != bufSize {
-      tt.Errorf("manually set buffer len be bufSize")
+      tt.Errorf("discard over max buf 123 byte")
     }
   })
 }
@@ -69,15 +69,23 @@ func TestBytePoolDiscard(t *testing.T) {
   })
   t.Run("freecap/largesize", func(tt *testing.T) {
     p := NewBytePool(10, bufSize)
-    p.Put(make([]byte, bufSize))
-
-    if p.Put(make([]byte, 100)) != true {
+    if p.Put(make([]byte, bufSize)) != true {
       tt.Errorf("put ok")
+    }
+
+    if p.Put(make([]byte, bufSize + 1)) != true {
+      tt.Errorf("put ok nearby size")
+    }
+
+    if p.Put(make([]byte, 100)) {
+      tt.Errorf("discard over max buf size")
     }
   })
   t.Run("freecap/smallsize", func(tt *testing.T) {
     p := NewBytePool(10, bufSize)
-    p.Put(make([]byte, bufSize))
+    if p.Put(make([]byte, bufSize)) != true {
+      tt.Errorf("put ok")
+    }
 
     if p.Put(make([]byte, 1)) {
       tt.Errorf("discard small buf")
