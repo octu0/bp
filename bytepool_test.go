@@ -1,11 +1,11 @@
 package bp
 
 import (
-	"testing"
 	"github.com/octu0/chanque"
 	"runtime"
 	"strings"
 	"sync"
+	"testing"
 )
 
 func BenchmarkBytePool(b *testing.B) {

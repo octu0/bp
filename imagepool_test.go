@@ -1,11 +1,11 @@
 package bp
 
 import (
-	"image"
-	"testing"
 	"github.com/octu0/chanque"
+	"image"
 	"runtime"
 	"sync"
+	"testing"
 )
 
 func BenchmarkImageRGBAPool(b *testing.B) {
