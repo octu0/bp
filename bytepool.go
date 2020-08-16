@@ -1,88 +1,88 @@
 package bp
 
 type BytePool struct {
-  pool       chan []byte
-  bufSize    int
-  maxBufSize int
+	pool       chan []byte
+	bufSize    int
+	maxBufSize int
 }
 
 func NewBytePool(poolSize int, bufSize int, funcs ...optionFunc) *BytePool {
-  opt := newOption()
-  for _, fn := range funcs {
-    fn(opt)
-  }
+	opt := newOption()
+	for _, fn := range funcs {
+		fn(opt)
+	}
 
-  b := &BytePool{
-    pool:       make(chan []byte, poolSize),
-    bufSize:    bufSize,
-    maxBufSize: int(opt.maxBufSizeFactor * float64(bufSize)),
-  }
+	b := &BytePool{
+		pool:       make(chan []byte, poolSize),
+		bufSize:    bufSize,
+		maxBufSize: int(opt.maxBufSizeFactor * float64(bufSize)),
+	}
 
-  if b.maxBufSize < 1 {
-    b.maxBufSize = bufSize
-  }
+	if b.maxBufSize < 1 {
+		b.maxBufSize = bufSize
+	}
 
-  if opt.preload {
-    b.preload(opt.preloadRate)
-  }
+	if opt.preload {
+		b.preload(opt.preloadRate)
+	}
 
-  return b
+	return b
 }
 
 func (b *BytePool) GetRef() *ByteRef {
-  data := b.Get()
+	data := b.Get()
 
-  ref := newByteRef(data, b)
-  ref.setFinalizer()
-  return ref
+	ref := newByteRef(data, b)
+	ref.setFinalizer()
+	return ref
 }
 
 func (b *BytePool) preload(rate float64) {
-  if 0 < cap(b.pool) {
-    preloadSize := int(float64(cap(b.pool)) * rate)
-    for i := 0; i < preloadSize; i += 1 {
-      b.Put(make([]byte, b.bufSize))
-    }
-  }
+	if 0 < cap(b.pool) {
+		preloadSize := int(float64(cap(b.pool)) * rate)
+		for i := 0; i < preloadSize; i += 1 {
+			b.Put(make([]byte, b.bufSize))
+		}
+	}
 }
 
 func (b *BytePool) Get() []byte {
-  var data []byte
-  select {
-  case data = <-b.pool:
-    // reuse exists pool
-  default:
-    // create []byte
-    data = make([]byte, b.bufSize)
-  }
-  return data
+	var data []byte
+	select {
+	case data = <-b.pool:
+		// reuse exists pool
+	default:
+		// create []byte
+		data = make([]byte, b.bufSize)
+	}
+	return data
 }
 
 func (b *BytePool) Put(data []byte) bool {
-  if b.maxBufSize <= cap(data) {
-    // discard, dont keep too big size byte in heap and release it
-    return false
-  }
+	if b.maxBufSize <= cap(data) {
+		// discard, dont keep too big size byte in heap and release it
+		return false
+	}
 
-  if cap(data) < b.bufSize {
-    // discard small buffer
-    return false
-  }
+	if cap(data) < b.bufSize {
+		// discard small buffer
+		return false
+	}
 
-  select {
-  case b.pool <- data[: b.bufSize]:
-    // free capacity
-    return true
-  default:
-    // full capacity, discard it
-    return false
-  }
+	select {
+	case b.pool <- data[:b.bufSize]:
+		// free capacity
+		return true
+	default:
+		// full capacity, discard it
+		return false
+	}
 }
 
 func (b *BytePool) Len() int {
-  return len(b.pool)
+	return len(b.pool)
 }
 
 func (b *BytePool) Cap() int {
-  return cap(b.pool)
+	return cap(b.pool)
 }
