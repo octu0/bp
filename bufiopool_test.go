@@ -5,7 +5,176 @@ import (
 	"bytes"
 	"strings"
 	"testing"
+	"github.com/octu0/chanque"
+	"io"
+	"sync"
+	"runtime"
 )
+
+func BenchmarkBufioReaderPool(b *testing.B) {
+	k8192 := strings.NewReader(strings.Repeat("@", 8192))
+	run := func(name string, fn func(*testing.B)) {
+		m1 := new(runtime.MemStats)
+		runtime.ReadMemStats(m1)
+
+		b.Run(name, fn)
+
+		m2 := new(runtime.MemStats)
+		runtime.ReadMemStats(m2)
+		b.Logf(
+			"%s\tTotalAlloc=%d\tStackInUse=%d",
+			name,
+			int64(m2.TotalAlloc)-int64(m1.TotalAlloc),
+			int64(m2.StackInuse)-int64(m1.StackInuse),
+			//int64(m2.HeapSys)  - int64(m1.HeapSys),
+			//int64(m2.HeapIdle)   - int64(m1.HeapIdle),
+		)
+	}
+	run("default/8", func(tb *testing.B) {
+		e := chanque.NewExecutor(10, 10)
+		defer e.Release()
+
+		for i := 0; i < tb.N; i += 1 {
+			e.Submit(func() {
+				r := bufio.NewReaderSize(k8192, 8)
+				for {
+					b := make([]byte, 1024)
+					c, err := r.Read(b)
+					if err == io.EOF {
+						break
+					}
+					if c == 0 {
+						break
+					}
+				}
+			})
+		}
+	})
+	run("default/4096", func(tb *testing.B) {
+		e := chanque.NewExecutor(10, 10)
+		defer e.Release()
+
+		for i := 0; i < tb.N; i += 1 {
+			e.Submit(func() {
+				r := bufio.NewReaderSize(k8192, 4096)
+				for {
+					b := make([]byte, 1024)
+					c, err := r.Read(b)
+					if err == io.EOF {
+						break
+					}
+					if c == 0 {
+						break
+					}
+				}
+			})
+		}
+	})
+	run("syncpool/8", func(tb *testing.B) {
+		e := chanque.NewExecutor(10, 10)
+		defer e.Release()
+
+		p := &sync.Pool{
+			New: func() interface{} {
+				return bufio.NewReaderSize(nil, 8)
+			},
+		}
+
+		for i := 0; i < tb.N; i += 1 {
+			e.Submit(func() {
+				r := p.Get().(*bufio.Reader)
+				r.Reset(k8192)
+				defer p.Put(r)
+
+				for {
+					b := make([]byte, 1024)
+					c, err := r.Read(b)
+					if err == io.EOF {
+						break
+					}
+					if c == 0 {
+						break
+					}
+				}
+			})
+		}
+	})
+	run("syncpool/4096", func(tb *testing.B) {
+		e := chanque.NewExecutor(10, 10)
+		defer e.Release()
+
+		p := &sync.Pool{
+			New: func() interface{} {
+				return bufio.NewReaderSize(nil, 4096)
+			},
+		}
+
+		for i := 0; i < tb.N; i += 1 {
+			e.Submit(func() {
+				r := p.Get().(*bufio.Reader)
+				r.Reset(k8192)
+				defer p.Put(r)
+
+				for {
+					b := make([]byte, 1024)
+					c, err := r.Read(b)
+					if err == io.EOF {
+						break
+					}
+					if c == 0 {
+						break
+					}
+				}
+			})
+		}
+	})
+	run("bufiopool/8", func(tb *testing.B) {
+		e := chanque.NewExecutor(10, 10)
+		defer e.Release()
+
+		p := NewBufioReaderSizePool(e.MaxWorker(), 8)
+		for i := 0; i < tb.N; i += 1 {
+			e.Submit(func() {
+				r := p.Get(k8192)
+				defer p.Put(r)
+
+				for {
+					b := make([]byte, 1024)
+					c, err := r.Read(b)
+					if err == io.EOF {
+						break
+					}
+					if c == 0 {
+						break
+					}
+				}
+			})
+		}
+	})
+	run("bufiopool/4096", func(tb *testing.B) {
+		e := chanque.NewExecutor(10, 10)
+		defer e.Release()
+
+		p := NewBufioReaderSizePool(e.MaxWorker(), 4096)
+		for i := 0; i < tb.N; i += 1 {
+			e.Submit(func() {
+				r := p.Get(k8192)
+				defer p.Put(r)
+
+				for {
+					b := make([]byte, 1024)
+					c, err := r.Read(b)
+					if err == io.EOF {
+						break
+					}
+					if c == 0 {
+						break
+					}
+				}
+			})
+		}
+	})
+}
 
 func TestBufioPoolBufSize(t *testing.T) {
 	t.Run("reader/default/get", func(tt *testing.T) {
@@ -187,7 +356,7 @@ func TestBufioPoolLenCap(t *testing.T) {
 
 		d1 := p.Get(strings.NewReader(""))
 		if 0 != p.Len() {
-			tt.Errorf("aquire pool")
+			tt.Errorf("acquire pool")
 		}
 		p.Put(d1)
 		if 1 != p.Len() {
@@ -222,7 +391,7 @@ func TestBufioPoolLenCap(t *testing.T) {
 
 		d1 := p.Get(strings.NewReader(""))
 		if 0 != p.Len() {
-			tt.Errorf("aquire pool")
+			tt.Errorf("acquire pool")
 		}
 		p.Put(d1)
 		if 1 != p.Len() {
@@ -310,7 +479,7 @@ func TestBufioPoolLenCap(t *testing.T) {
 
 		d1 := p.Get(bytes.NewBuffer(nil))
 		if 0 != p.Len() {
-			tt.Errorf("aquire pool")
+			tt.Errorf("acquire pool")
 		}
 		p.Put(d1)
 		if 1 != p.Len() {
@@ -345,7 +514,7 @@ func TestBufioPoolLenCap(t *testing.T) {
 
 		d1 := p.Get(bytes.NewBuffer(nil))
 		if 0 != p.Len() {
-			tt.Errorf("aquire pool")
+			tt.Errorf("acquire pool")
 		}
 		p.Put(d1)
 		if 1 != p.Len() {

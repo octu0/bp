@@ -3,7 +3,114 @@ package bp
 import (
 	"image"
 	"testing"
+	"github.com/octu0/chanque"
+	"runtime"
+	"sync"
 )
+
+func BenchmarkImageRGBAPool(b *testing.B) {
+	r360 := image.Rect(0, 0, 640, 360)
+	r1080 := image.Rect(0, 0, 1920, 1080)
+	run := func(name string, fn func(*testing.B)) {
+		m1 := new(runtime.MemStats)
+		runtime.ReadMemStats(m1)
+
+		b.Run(name, fn)
+
+		m2 := new(runtime.MemStats)
+		runtime.ReadMemStats(m2)
+		b.Logf(
+			"%s\tTotalAlloc=%d\tStackInUse=%d",
+			name,
+			int64(m2.TotalAlloc)-int64(m1.TotalAlloc),
+			int64(m2.StackInuse)-int64(m1.StackInuse),
+			//int64(m2.HeapSys)  - int64(m1.HeapSys),
+			//int64(m2.HeapIdle)   - int64(m1.HeapIdle),
+		)
+	}
+	run("default/360", func(tb *testing.B) {
+		e := chanque.NewExecutor(10, 10)
+		defer e.Release()
+
+		for i := 0; i < tb.N; i += 1 {
+			e.Submit(func() {
+				img := image.NewRGBA(r360)
+				img.RGBAAt(10, 10)
+			})
+		}
+	})
+	run("default/1080", func(tb *testing.B) {
+		e := chanque.NewExecutor(10, 10)
+		defer e.Release()
+
+		for i := 0; i < tb.N; i += 1 {
+			e.Submit(func() {
+				img := image.NewRGBA(r1080)
+				img.RGBAAt(100, 100)
+			})
+		}
+	})
+	run("syncpool/360", func(tb *testing.B) {
+		e := chanque.NewExecutor(10, 10)
+		defer e.Release()
+
+		p := &sync.Pool{
+			New: func() interface{} {
+				return image.NewRGBA(r360)
+			},
+		}
+		for i := 0; i < tb.N; i += 1 {
+			e.Submit(func() {
+				img := p.Get().(*image.RGBA)
+				img.RGBAAt(10, 10)
+				p.Put(img)
+			})
+		}
+	})
+	run("syncpool/1080", func(tb *testing.B) {
+		e := chanque.NewExecutor(10, 10)
+		defer e.Release()
+
+		p := &sync.Pool{
+			New: func() interface{} {
+				return image.NewRGBA(r1080)
+			},
+		}
+		for i := 0; i < tb.N; i += 1 {
+			e.Submit(func() {
+				img := p.Get().(*image.RGBA)
+				img.RGBAAt(100, 100)
+				p.Put(img)
+			})
+		}
+	})
+	run("imagepool/360", func(tb *testing.B) {
+		e := chanque.NewExecutor(10, 10)
+		defer e.Release()
+
+		p := NewImageRGBAPool(e.MaxWorker(), r360)
+		for i := 0; i < tb.N; i += 1 {
+			e.Submit(func() {
+				ref := p.GetRef()
+				ref.Img.RGBAAt(10, 10)
+				ref.Release()
+			})
+		}
+	})
+	run("imagepool/1080", func(tb *testing.B) {
+		e := chanque.NewExecutor(10, 10)
+		defer e.Release()
+
+		p := NewImageRGBAPool(e.MaxWorker(), r360)
+		for i := 0; i < tb.N; i += 1 {
+			e.Submit(func() {
+				ref := p.GetRef()
+				ref.Img.RGBAAt(100, 100)
+				ref.Release()
+			})
+		}
+	})
+}
 
 func TestImageRGBAPoolBufSize(t *testing.T) {
 	t.Run("getsamecap", func(tt *testing.T) {
@@ -158,7 +265,7 @@ func TestImageRGBAPoolCapLen(t *testing.T) {
 
 		d1 := p.GetRef()
 		if 0 != p.Len() {
-			tt.Errorf("aquire pool")
+			tt.Errorf("acquire pool")
 		}
 		p.Put(d1.pix)
 		if 1 != p.Len() {
@@ -229,7 +336,7 @@ func TestImageYCbCrPoolCapLen(t *testing.T) {
 
 		d1 := p.GetRef()
 		if 0 != p.Len() {
-			tt.Errorf("aquire pool")
+			tt.Errorf("acquire pool")
 		}
 		p.Put(d1.pix)
 		if 1 != p.Len() {

@@ -3,7 +3,119 @@ package bp
 import (
 	"bytes"
 	"testing"
+	"github.com/octu0/chanque"
+	"runtime"
+	"strings"
+	"sync"
 )
+
+func BenchmarkBufferPool(b *testing.B) {
+	k8 := []byte(strings.Repeat("@", 8))
+	k4096 := []byte(strings.Repeat("@", 4096))
+	run := func(name string, fn func(*testing.B)) {
+		m1 := new(runtime.MemStats)
+		runtime.ReadMemStats(m1)
+
+		b.Run(name, fn)
+
+		m2 := new(runtime.MemStats)
+		runtime.ReadMemStats(m2)
+		b.Logf(
+			"%s\tTotalAlloc=%d\tStackInUse=%d",
+			name,
+			int64(m2.TotalAlloc)-int64(m1.TotalAlloc),
+			int64(m2.StackInuse)-int64(m1.StackInuse),
+			//int64(m2.HeapSys)  - int64(m1.HeapSys),
+			//int64(m2.HeapIdle)   - int64(m1.HeapIdle),
+		)
+	}
+	run("default/8", func(tb *testing.B) {
+		e := chanque.NewExecutor(10, 10)
+		defer e.Release()
+
+		for i := 0; i < tb.N; i += 1 {
+			e.Submit(func() {
+				s := bytes.NewBuffer(make([]byte, 0, 8))
+				s.Write(k8)
+			})
+		}
+	})
+	run("default/4096", func(tb *testing.B) {
+		e := chanque.NewExecutor(10, 10)
+		defer e.Release()
+
+		for i := 0; i < tb.N; i += 1 {
+			e.Submit(func() {
+				s := bytes.NewBuffer(make([]byte, 0, 4096))
+				s.Write(k4096)
+			})
+		}
+	})
+	run("syncpool/8", func(tb *testing.B) {
+		e := chanque.NewExecutor(10, 10)
+		defer e.Release()
+
+		p := &sync.Pool{
+			New: func() interface{} {
+				return bytes.NewBuffer(make([]byte, 0, 8))
+			},
+		}
+		for i := 0; i < tb.N; i += 1 {
+			e.Submit(func() {
+				s := p.Get().(*bytes.Buffer)
+				s.Write(k8)
+				s.Reset()
+				p.Put(s)
+			})
+		}
+	})
+	run("syncpool/4096", func(tb *testing.B) {
+		e := chanque.NewExecutor(10, 10)
+		defer e.Release()
+
+		p := &sync.Pool{
+			New: func() interface{} {
+				return bytes.NewBuffer(make([]byte, 0, 4096))
+			},
+		}
+		for i := 0; i < tb.N; i += 1 {
+			e.Submit(func() {
+				s := p.Get().(*bytes.Buffer)
+				s.Write(k4096)
+				s.Reset()
+				p.Put(s)
+			})
+		}
+	})
+	run("bufferpool/8", func(tb *testing.B) {
+		e := chanque.NewExecutor(10, 10)
+		defer e.Release()
+
+		p := NewBufferPool(e.MaxWorker(), 8)
+
+		for i := 0; i < tb.N; i += 1 {
+			e.Submit(func() {
+				s := p.Get()
+				s.Write(k8)
+				p.Put(s)
+			})
+		}
+	})
+	run("bufferpool/4096", func(tb *testing.B) {
+		e := chanque.NewExecutor(10, 10)
+		defer e.Release()
+
+		p := NewBufferPool(e.MaxWorker(), 4096)
+
+		for i := 0; i < tb.N; i += 1 {
+			e.Submit(func() {
+				s := p.Get()
+				s.Write(k4096)
+				p.Put(s)
+			})
+		}
+	})
+}
 
 func TestBufferPoolBufSize(t *testing.T) {
 	bufSize := 8
@@ -132,7 +244,7 @@ func TestBufferPoolLenCap(t *testing.T) {
 
 		d1 := p.Get()
 		if 0 != p.Len() {
-			tt.Errorf("aquire pool")
+			tt.Errorf("acquire pool")
 		}
 		p.Put(d1)
 		if 1 != p.Len() {
