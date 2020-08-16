@@ -2,7 +2,117 @@ package bp
 
 import (
 	"testing"
+	"github.com/octu0/chanque"
+	"runtime"
+	"strings"
+	"sync"
 )
+
+func BenchmarkBytePool(b *testing.B) {
+	k8 := strings.NewReader(strings.Repeat("@", 8))
+	k4096 := strings.NewReader(strings.Repeat("@", 4096))
+	run := func(name string, fn func(*testing.B)) {
+		m1 := new(runtime.MemStats)
+		runtime.ReadMemStats(m1)
+
+		b.Run(name, fn)
+
+		m2 := new(runtime.MemStats)
+		runtime.ReadMemStats(m2)
+		b.Logf(
+			"%s\tTotalAlloc=%d\tStackInUse=%d",
+			name,
+			int64(m2.TotalAlloc)-int64(m1.TotalAlloc),
+			int64(m2.StackInuse)-int64(m1.StackInuse),
+			//int64(m2.HeapSys)  - int64(m1.HeapSys),
+			//int64(m2.HeapIdle)   - int64(m1.HeapIdle),
+		)
+	}
+	run("default/8", func(tb *testing.B) {
+		e := chanque.NewExecutor(10, 10)
+		defer e.Release()
+
+		for i := 0; i < tb.N; i += 1 {
+			e.Submit(func() {
+				s := make([]byte, 8)
+				k8.Read(s)
+			})
+		}
+	})
+	run("default/4096", func(tb *testing.B) {
+		e := chanque.NewExecutor(10, 10)
+		defer e.Release()
+
+		for i := 0; i < tb.N; i += 1 {
+			e.Submit(func() {
+				s := make([]byte, 4096)
+				k4096.Read(s)
+			})
+		}
+	})
+	run("syncpool/8", func(tb *testing.B) {
+		e := chanque.NewExecutor(10, 10)
+		defer e.Release()
+
+		p := &sync.Pool{
+			New: func() interface{} {
+				return make([]byte, 8)
+			},
+		}
+		for i := 0; i < tb.N; i += 1 {
+			e.Submit(func() {
+				s := p.Get().([]byte)
+				k8.Read(s)
+				p.Put(s)
+			})
+		}
+	})
+	run("syncpool/4096", func(tb *testing.B) {
+		e := chanque.NewExecutor(10, 10)
+		defer e.Release()
+
+		p := &sync.Pool{
+			New: func() interface{} {
+				return make([]byte, 4096)
+			},
+		}
+		for i := 0; i < tb.N; i += 1 {
+			e.Submit(func() {
+				s := p.Get().([]byte)
+				k4096.Read(s)
+				p.Put(s)
+			})
+		}
+	})
+	run("bytepool/8", func(tb *testing.B) {
+		e := chanque.NewExecutor(10, 10)
+		defer e.Release()
+
+		p := NewBytePool(e.MaxWorker(), 8)
+
+		for i := 0; i < tb.N; i += 1 {
+			e.Submit(func() {
+				s := p.Get()
+				k8.Read(s)
+				p.Put(s)
+			})
+		}
+	})
+	run("bytepool/4096", func(tb *testing.B) {
+		e := chanque.NewExecutor(10, 10)
+		defer e.Release()
+
+		p := NewBytePool(e.MaxWorker(), 4096)
+
+		for i := 0; i < tb.N; i += 1 {
+			e.Submit(func() {
+				s := p.Get()
+				k4096.Read(s)
+				p.Put(s)
+			})
+		}
+	})
+}
 
 func TestBytePoolBufSize(t *testing.T) {
 	bufSize := 8
