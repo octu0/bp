@@ -3,12 +3,12 @@ package bp
 import (
 	"bufio"
 	"bytes"
-	"strings"
-	"testing"
 	"github.com/octu0/chanque"
 	"io"
-	"sync"
 	"runtime"
+	"strings"
+	"sync"
+	"testing"
 )
 
 func BenchmarkBufioReaderPool(b *testing.B) {
