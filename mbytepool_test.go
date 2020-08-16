@@ -34,10 +34,10 @@ func TestMultiBytePoolNew(t *testing.T) {
       ),
     )
     if mp.pools[0].bufSize != 4 {
-      tt.Errorf("sorted")
+      tt.Errorf("sorted head")
     }
     if mp.pools[2].bufSize != 16 {
-      tt.Errorf("sorted")
+      tt.Errorf("sorted tail")
     }
     for _, p := range mp.pools {
       l := int(float64(p.Cap()) * 0.5)

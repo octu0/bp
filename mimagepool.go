@@ -51,6 +51,22 @@ func uniqImagepoolTuple(tuples []imagepoolTuple) []imagepoolTuple {
   return uniqTuples
 }
 
+func sortTuples(tuples []imagepoolTuple) {
+  sort.Slice(tuples, func(a, b int) bool {
+    if tuples[a].rect.Dx() == tuples[b].rect.Dx() {
+      return tuples[a].rect.Dy() < tuples[b].rect.Dy()
+    }
+    return tuples[a].rect.Dx() < tuples[b].rect.Dx()
+  })
+}
+
+func rectIn(src, tgt image.Rectangle) bool {
+  if tgt.Dx() <= src.Dx() && tgt.Dy() <= src.Dy() {
+    return true
+  }
+  return false
+}
+
 type MultiImageRGBAPool struct {
   tuples []imagepoolTuple
   pools  []*ImageRGBAPool
@@ -65,14 +81,7 @@ func NewMultiImageRGBAPool(funcs ...multiImageBufferPoolOptionFunc) *MultiImageR
   tuples    := uniqImagepoolTuple(mOpt.tuples)
   poolFuncs := mOpt.poolFuncs
 
-  sort.Slice(tuples, func(a, b int) bool {
-    if tuples[a].rect.Dx() < tuples[b].rect.Dx() {
-      if tuples[a].rect.Dy() < tuples[b].rect.Dy() {
-        return true
-      }
-    }
-    return false
-  })
+  sortTuples(tuples)
   pools := make([]*ImageRGBAPool, len(tuples))
   for i, t := range tuples {
     pools[i] = NewImageRGBAPool(t.poolSize, t.rect, poolFuncs...)
@@ -84,8 +93,12 @@ func NewMultiImageRGBAPool(funcs ...multiImageBufferPoolOptionFunc) *MultiImageR
 }
 
 func (b *MultiImageRGBAPool) find(r image.Rectangle) (*ImageRGBAPool, bool) {
+  if r.Empty() {
+    return nil, false
+  }
+
   for i, t := range b.tuples {
-    if t.rect.In(r) {
+    if rectIn(t.rect, r) {
       return b.pools[i], true
     }
   }
@@ -127,14 +140,7 @@ func NewMultiImageYCbCrPool(sample image.YCbCrSubsampleRatio, funcs ...multiImag
   tuples    := uniqImagepoolTuple(mOpt.tuples)
   poolFuncs := mOpt.poolFuncs
 
-  sort.Slice(tuples, func(a, b int) bool {
-    if tuples[a].rect.Dx() < tuples[b].rect.Dx() {
-      if tuples[a].rect.Dy() < tuples[b].rect.Dy() {
-        return true
-      }
-    }
-    return false
-  })
+  sortTuples(tuples)
   pools := make([]*ImageYCbCrPool, len(tuples))
   for i, t := range tuples {
     pools[i] = NewImageYCbCrPool(t.poolSize, t.rect, sample, poolFuncs...)
@@ -148,7 +154,7 @@ func NewMultiImageYCbCrPool(sample image.YCbCrSubsampleRatio, funcs ...multiImag
 
 func (b *MultiImageYCbCrPool) find(r image.Rectangle) (*ImageYCbCrPool, bool) {
   for i, t := range b.tuples {
-    if t.rect.In(r) {
+    if rectIn(t.rect, r) {
       return b.pools[i], true
     }
   }
