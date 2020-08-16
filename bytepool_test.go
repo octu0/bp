@@ -232,7 +232,7 @@ func TestBytePoolLenCap(t *testing.T) {
 
 		d1 := p.Get()
 		if 0 != p.Len() {
-			tt.Errorf("aquire pool")
+			tt.Errorf("acquire pool")
 		}
 		p.Put(d1)
 		if 1 != p.Len() {

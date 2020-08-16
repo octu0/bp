@@ -265,7 +265,7 @@ func TestImageRGBAPoolCapLen(t *testing.T) {
 
 		d1 := p.GetRef()
 		if 0 != p.Len() {
-			tt.Errorf("aquire pool")
+			tt.Errorf("acquire pool")
 		}
 		p.Put(d1.pix)
 		if 1 != p.Len() {
@@ -336,7 +336,7 @@ func TestImageYCbCrPoolCapLen(t *testing.T) {
 
 		d1 := p.GetRef()
 		if 0 != p.Len() {
-			tt.Errorf("aquire pool")
+			tt.Errorf("acquire pool")
 		}
 		p.Put(d1.pix)
 		if 1 != p.Len() {

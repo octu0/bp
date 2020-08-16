@@ -356,7 +356,7 @@ func TestBufioPoolLenCap(t *testing.T) {
 
 		d1 := p.Get(strings.NewReader(""))
 		if 0 != p.Len() {
-			tt.Errorf("aquire pool")
+			tt.Errorf("acquire pool")
 		}
 		p.Put(d1)
 		if 1 != p.Len() {
@@ -391,7 +391,7 @@ func TestBufioPoolLenCap(t *testing.T) {
 
 		d1 := p.Get(strings.NewReader(""))
 		if 0 != p.Len() {
-			tt.Errorf("aquire pool")
+			tt.Errorf("acquire pool")
 		}
 		p.Put(d1)
 		if 1 != p.Len() {
@@ -479,7 +479,7 @@ func TestBufioPoolLenCap(t *testing.T) {
 
 		d1 := p.Get(bytes.NewBuffer(nil))
 		if 0 != p.Len() {
-			tt.Errorf("aquire pool")
+			tt.Errorf("acquire pool")
 		}
 		p.Put(d1)
 		if 1 != p.Len() {
@@ -514,7 +514,7 @@ func TestBufioPoolLenCap(t *testing.T) {
 
 		d1 := p.Get(bytes.NewBuffer(nil))
 		if 0 != p.Len() {
-			tt.Errorf("aquire pool")
+			tt.Errorf("acquire pool")
 		}
 		p.Put(d1)
 		if 1 != p.Len() {
