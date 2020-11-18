@@ -57,6 +57,38 @@ func main() {
 }
 ```
 
+## io.Copy vs CopyIOPool.Copy Benchmark
+
+CopyIOPool.Copy to reduce allocation of [io.Copy](https://golang.org/pkg/io/#Copy)
+
+```bash
+$ go test -bench=BenchmarkIoCopy -benchmem ./
+goos: darwin
+goarch: amd64
+pkg: github.com/octu0/bp
+BenchmarkIoCopy-8                	  528212	      2270 ns/op	   32816 B/op	       3 allocs/op
+BenchmarkIoCopyPoolDefault-8     	  662061	      1888 ns/op	   16624 B/op	       7 allocs/op
+BenchmarkIoCopyPoolFixedSize-8   	 2311072	       521 ns/op	      48 B/op	       2 allocs/op
+PASS
+ok  	github.com/octu0/bp	4.244s
+```
+
+## ioutil.ReadAll vs CopyIOPool.ReadAll Benchmark
+
+similarly, CopyIOPool.ReadAll reduces allocation of [ioutil.ReadAll](https://golang.org/pkg/io/ioutil/#ReadAll)
+
+```bash
+$ go test -bench=BenchmarkIoReadAll -benchmem ./
+goos: darwin
+goarch: amd64
+pkg: github.com/octu0/bp
+BenchmarkIoReadAllIoUtil-8          	    3774	    315602 ns/op	 4192308 B/op	      13 allocs/op
+BenchmarkIoReadAllPoolDefault-8     	    3688	    356025 ns/op	 4063475 B/op	      13 allocs/op
+BenchmarkIoReadAllPoolFixedSize-8   	    3208	    348119 ns/op	 4046906 B/op	       8 allocs/op
+PASS
+ok  	github.com/octu0/bp	3.761s
+```
+
 ## License
 
 Apache 2.0, see LICENSE file for details.
