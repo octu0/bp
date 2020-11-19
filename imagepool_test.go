@@ -1,11 +1,12 @@
 package bp
 
 import (
-	"github.com/octu0/chanque"
 	"image"
 	"runtime"
 	"sync"
 	"testing"
+
+	"github.com/octu0/chanque"
 )
 
 func BenchmarkImageRGBAPool(b *testing.B) {
@@ -20,7 +21,7 @@ func BenchmarkImageRGBAPool(b *testing.B) {
 		m2 := new(runtime.MemStats)
 		runtime.ReadMemStats(m2)
 		b.Logf(
-			"%s\tTotalAlloc=%d\tStackInUse=%d",
+			"%-20s\tTotalAlloc=%5d\tStackInUse=%5d",
 			name,
 			int64(m2.TotalAlloc)-int64(m1.TotalAlloc),
 			int64(m2.StackInuse)-int64(m1.StackInuse),

@@ -3,12 +3,13 @@ package bp
 import (
 	"bufio"
 	"bytes"
-	"github.com/octu0/chanque"
 	"io"
 	"runtime"
 	"strings"
 	"sync"
 	"testing"
+
+	"github.com/octu0/chanque"
 )
 
 func BenchmarkBufioReaderPool(b *testing.B) {
@@ -22,7 +23,7 @@ func BenchmarkBufioReaderPool(b *testing.B) {
 		m2 := new(runtime.MemStats)
 		runtime.ReadMemStats(m2)
 		b.Logf(
-			"%s\tTotalAlloc=%d\tStackInUse=%d",
+			"%-20s\tTotalAlloc=%5d\tStackInUse=%5d",
 			name,
 			int64(m2.TotalAlloc)-int64(m1.TotalAlloc),
 			int64(m2.StackInuse)-int64(m1.StackInuse),
