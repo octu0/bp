@@ -3,7 +3,7 @@
 [![Apache License](https://img.shields.io/github/license/octu0/bp)](https://github.com/octu0/bp/blob/master/LICENSE)
 [![GoDoc](https://godoc.org/github.com/octu0/bp?status.svg)](https://godoc.org/github.com/octu0/bp)
 [![Go Report Card](https://goreportcard.com/badge/github.com/octu0/bp)](https://goreportcard.com/report/github.com/octu0/bp)
-[![Releases](https://img.shields.io/github/v/release/octu0/bp)](https://github.com/octu0/chanque/bp)
+[![Releases](https://img.shields.io/github/v/release/octu0/bp)](https://github.com/octu0/bp/releases)
 
 `bp` implements buffer pool of various objects such as byte array (`[]byte`) or [*bytes.Buffer](http://golang.org/pkg/bytes/#Buffer) / [*image.RGBA](https://golang.org/pkg/image/#RGBA) and [*bufio.Reader](https://golang.org/pkg/bufio/#Reader).  
 It is inspired by [bpool](https://github.com/oxtoacart/bpool) and its many features are similar.
