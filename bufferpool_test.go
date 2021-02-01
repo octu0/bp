@@ -31,8 +31,10 @@ func BenchmarkBufferPool(b *testing.B) {
 		)
 	}
 	run("default/8", func(tb *testing.B) {
-		e := chanque.NewExecutor(10, 10)
-		defer e.Release()
+		tb.StopTimer()
+		e := chanque.NewExecutor(100, 100)
+		tb.Cleanup(func() { e.Release() })
+		tb.StartTimer()
 
 		for i := 0; i < tb.N; i += 1 {
 			e.Submit(func() {
@@ -42,8 +44,10 @@ func BenchmarkBufferPool(b *testing.B) {
 		}
 	})
 	run("default/4096", func(tb *testing.B) {
-		e := chanque.NewExecutor(10, 10)
-		defer e.Release()
+		tb.StopTimer()
+		e := chanque.NewExecutor(100, 100)
+		tb.Cleanup(func() { e.Release() })
+		tb.StartTimer()
 
 		for i := 0; i < tb.N; i += 1 {
 			e.Submit(func() {
@@ -53,8 +57,10 @@ func BenchmarkBufferPool(b *testing.B) {
 		}
 	})
 	run("syncpool/8", func(tb *testing.B) {
-		e := chanque.NewExecutor(10, 10)
-		defer e.Release()
+		tb.StopTimer()
+		e := chanque.NewExecutor(100, 100)
+		tb.Cleanup(func() { e.Release() })
+		tb.StartTimer()
 
 		p := &sync.Pool{
 			New: func() interface{} {
@@ -71,8 +77,10 @@ func BenchmarkBufferPool(b *testing.B) {
 		}
 	})
 	run("syncpool/4096", func(tb *testing.B) {
-		e := chanque.NewExecutor(10, 10)
-		defer e.Release()
+		tb.StopTimer()
+		e := chanque.NewExecutor(100, 100)
+		tb.Cleanup(func() { e.Release() })
+		tb.StartTimer()
 
 		p := &sync.Pool{
 			New: func() interface{} {
@@ -89,8 +97,10 @@ func BenchmarkBufferPool(b *testing.B) {
 		}
 	})
 	run("bufferpool/8", func(tb *testing.B) {
-		e := chanque.NewExecutor(10, 10)
-		defer e.Release()
+		tb.StopTimer()
+		e := chanque.NewExecutor(100, 100)
+		tb.Cleanup(func() { e.Release() })
+		tb.StartTimer()
 
 		p := NewBufferPool(e.MaxWorker(), 8)
 
@@ -103,8 +113,10 @@ func BenchmarkBufferPool(b *testing.B) {
 		}
 	})
 	run("bufferpool/4096", func(tb *testing.B) {
-		e := chanque.NewExecutor(10, 10)
-		defer e.Release()
+		tb.StopTimer()
+		e := chanque.NewExecutor(100, 100)
+		tb.Cleanup(func() { e.Release() })
+		tb.StartTimer()
 
 		p := NewBufferPool(e.MaxWorker(), 4096)
 
