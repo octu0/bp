@@ -190,14 +190,14 @@ func TestBufferPoolDiscard(t *testing.T) {
 			tt.Errorf("maxBufSize put ng")
 		}
 		if p.Put(bytes.NewBuffer(make([]byte, 100))) {
-			tt.Errorf("maxBufSie put ng")
+			tt.Errorf("maxBufSize put ng")
 		}
 
 		if p.Put(bytes.NewBuffer(make([]byte, 0, 30))) != true {
 			tt.Errorf("less than maxBufSize put no")
 		}
 		if p.Put(bytes.NewBuffer(make([]byte, 30))) != true {
-			tt.Errorf("less than maxBufSie put no")
+			tt.Errorf("less than maxBufSize put no")
 		}
 	})
 	t.Run("freecap/smallsize", func(tt *testing.T) {
