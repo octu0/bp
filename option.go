@@ -5,7 +5,7 @@ type optionFunc func(*option)
 const (
 	defaultPreloadEnable    bool    = false
 	defaultPreloadRate      float64 = 0.25
-	defaultMaxBufSizeFactor float64 = 4.0
+	defaultMaxBufSizeFactor float64 = 1.25
 	defaultAutoGrowEnable   bool    = false
 )
 
