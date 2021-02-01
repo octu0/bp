@@ -79,7 +79,7 @@ func (b *BufferPool) autoGrow(data *bytes.Buffer) {
 }
 
 func (b *BufferPool) Put(data *bytes.Buffer) bool {
-	if b.maxBufSize <= data.Cap() {
+	if b.maxBufSize < data.Cap() {
 		// discard, dont keep too big size buffer in heap and release it
 		return false
 	}
