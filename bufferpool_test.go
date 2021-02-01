@@ -148,16 +148,37 @@ func TestBufferPoolBufSize(t *testing.T) {
 			tt.Errorf("buf size = %d", bufSize)
 		}
 	})
-	t.Run("getput/largecap", func(tt *testing.T) {
+	t.Run("getput/maxcap-discard", func(tt *testing.T) {
 		p := NewBufferPool(10, bufSize)
 		p.Put(bytes.NewBuffer(make([]byte, 0, 20)))
 
 		d1 := p.Get()
-		if d1.Cap() == bufSize {
+		if d1.Cap() == 20 {
 			tt.Errorf("manually set buffer capacity be different: %d", d1.Cap())
 		}
 		if d1.Len() != 0 {
 			tt.Errorf("manually set buffer be Reset")
+		}
+	})
+	t.Run("getput/autograw/small", func(tt *testing.T) {
+		p := NewBufferPool(10, bufSize, AutoGrow(true))
+		p.Put(bytes.NewBuffer(make([]byte, 0, 1)))
+
+		d1 := p.Get()
+		if d1.Cap() <= 1 {
+			tt.Errorf("auto grow enabled")
+		}
+		if d1.Cap() < bufSize {
+			tt.Errorf("bytes.Buffer.Grow called")
+		}
+	})
+	t.Run("getput/autograw/maxbuf", func(tt *testing.T) {
+		p := NewBufferPool(10, bufSize, AutoGrow(true))
+		p.Put(bytes.NewBuffer(make([]byte, 0, p.maxBufSize)))
+
+		d1 := p.Get()
+		if d1.Cap() != p.maxBufSize {
+			tt.Errorf("keep max buf")
 		}
 	})
 }
