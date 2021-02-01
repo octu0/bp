@@ -5,9 +5,10 @@ import (
 )
 
 type BufferPool struct {
-	pool       chan *bytes.Buffer
-	bufSize    int
-	maxBufSize int
+	pool        chan *bytes.Buffer
+	bufSize     int
+	maxBufSize  int
+	autoGrowCap bool
 }
 
 func NewBufferPool(poolSize int, bufSize int, funcs ...optionFunc) *BufferPool {
@@ -28,6 +29,10 @@ func NewBufferPool(poolSize int, bufSize int, funcs ...optionFunc) *BufferPool {
 
 	if opt.preload {
 		b.preload(opt.preloadRate)
+	}
+
+	if opt.autoGrow {
+		b.autoGrowCap = opt.autoGrow
 	}
 
 	return b
@@ -62,16 +67,24 @@ func (b *BufferPool) Get() *bytes.Buffer {
 	return data
 }
 
-func (b *BufferPool) Put(data *bytes.Buffer) bool {
-	if b.maxBufSize <= data.Cap() {
-		// discard, dont keep too big size buffer in heap and release it
-		return false
+func (b *BufferPool) autoGrow(data *bytes.Buffer) {
+	if b.autoGrowCap != true {
+		return
 	}
 
 	if data.Cap() < b.bufSize {
 		// increase bufSize to reduce call to internal bytes.grow
 		data.Grow(b.bufSize)
 	}
+}
+
+func (b *BufferPool) Put(data *bytes.Buffer) bool {
+	if b.maxBufSize <= data.Cap() {
+		// discard, dont keep too big size buffer in heap and release it
+		return false
+	}
+
+	b.autoGrow(data)
 
 	data.Reset()
 
