@@ -6,12 +6,14 @@ const (
 	defaultPreloadEnable    bool    = false
 	defaultPreloadRate      float64 = 0.25
 	defaultMaxBufSizeFactor float64 = 4.0
+	defaultAutoGrowEnable   bool    = false
 )
 
 type option struct {
 	preload          bool
 	preloadRate      float64
 	maxBufSizeFactor float64
+	autoGrow         bool
 }
 
 func newOption() *option {
@@ -19,6 +21,7 @@ func newOption() *option {
 		preload:          defaultPreloadEnable,
 		preloadRate:      defaultPreloadRate,
 		maxBufSizeFactor: defaultMaxBufSizeFactor,
+		autoGrow:         defaultAutoGrowEnable,
 	}
 }
 
@@ -37,5 +40,11 @@ func PreloadRate(rate float64) optionFunc {
 func MaxBufSizeFactor(factor float64) optionFunc {
 	return func(opt *option) {
 		opt.maxBufSizeFactor = factor
+	}
+}
+
+func AutoGrow(enable bool) optionFunc {
+	return func(opt *option) {
+		opt.autoGrow = enable
 	}
 }
