@@ -59,7 +59,7 @@ func (b *BytePool) Get() []byte {
 }
 
 func (b *BytePool) Put(data []byte) bool {
-	if b.maxBufSize <= cap(data) {
+	if b.maxBufSize < cap(data) {
 		// discard, dont keep too big size byte in heap and release it
 		return false
 	}
