@@ -248,6 +248,7 @@ func TestBytePoolLenCap(t *testing.T) {
 			d := p.Get()
 			s = append(s, d)
 		}
+		// fill it
 		for _, d := range s {
 			p.Put(d)
 		}
@@ -259,6 +260,7 @@ func TestBytePoolLenCap(t *testing.T) {
 			tt.Errorf("max capacity = 10")
 		}
 
+		// discard it
 		d1 := make([]byte, bufSize)
 		d2 := make([]byte, bufSize)
 		p.Put(d1)
