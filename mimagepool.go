@@ -79,8 +79,8 @@ func NewMultiImageRGBAPool(funcs ...multiImageBufferPoolOptionFunc) *MultiImageR
 	}
 
 	tuples := uniqImagepoolTuple(mOpt.tuples)
-
 	sortTuples(tuples)
+
 	pools := make([]*ImageRGBAPool, len(tuples))
 	for i, t := range tuples {
 		pools[i] = NewImageRGBAPool(t.poolSize, t.rect, mOpt.poolFuncs...)
@@ -136,8 +136,8 @@ func NewMultiImageNRGBAPool(funcs ...multiImageBufferPoolOptionFunc) *MultiImage
 	}
 
 	tuples := uniqImagepoolTuple(mOpt.tuples)
-
 	sortTuples(tuples)
+
 	pools := make([]*ImageNRGBAPool, len(tuples))
 	for i, t := range tuples {
 		pools[i] = NewImageNRGBAPool(t.poolSize, t.rect, mOpt.poolFuncs...)
@@ -194,12 +194,11 @@ func NewMultiImageYCbCrPool(sample image.YCbCrSubsampleRatio, funcs ...multiImag
 	}
 
 	tuples := uniqImagepoolTuple(mOpt.tuples)
-	poolFuncs := mOpt.poolFuncs
-
 	sortTuples(tuples)
+
 	pools := make([]*ImageYCbCrPool, len(tuples))
 	for i, t := range tuples {
-		pools[i] = NewImageYCbCrPool(t.poolSize, t.rect, sample, poolFuncs...)
+		pools[i] = NewImageYCbCrPool(t.poolSize, t.rect, sample, mOpt.poolFuncs...)
 	}
 	return &MultiImageYCbCrPool{
 		tuples: tuples,
