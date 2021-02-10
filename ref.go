@@ -211,6 +211,44 @@ func (b *ImageRGBARef) Release() {
 	}
 }
 
+type ImageNRGBARef struct {
+	Img    *image.NRGBA
+	pix    []uint8
+	pool   *ImageNRGBAPool
+	closed int32
+}
+
+func newImageNRGBARef(pix []uint8, img *image.NRGBA, pool *ImageNRGBAPool) *ImageNRGBARef {
+	return &ImageNRGBARef{
+		Img:    img,
+		pix:    pix,
+		pool:   pool,
+		closed: refInit,
+	}
+}
+
+func (b *ImageNRGBARef) Image() *image.NRGBA {
+	return b.Img
+}
+
+func (b *ImageNRGBARef) isClosed() bool {
+	return atomic.LoadInt32(&b.closed) == refClosed
+}
+
+func (b *ImageNRGBARef) setFinalizer() {
+	runtime.SetFinalizer(b, finalizeRef)
+}
+
+func (b *ImageNRGBARef) Release() {
+	if atomic.CompareAndSwapInt32(&b.closed, refInit, refClosed) {
+		runtime.SetFinalizer(b, nil) // clear
+		b.pool.Put(b.pix)
+		b.Img = nil
+		b.pix = nil
+		b.pool = nil
+	}
+}
+
 type ImageYCbCrRef struct {
 	Img    *image.YCbCr
 	pix    []uint8

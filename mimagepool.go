@@ -79,12 +79,11 @@ func NewMultiImageRGBAPool(funcs ...multiImageBufferPoolOptionFunc) *MultiImageR
 	}
 
 	tuples := uniqImagepoolTuple(mOpt.tuples)
-	poolFuncs := mOpt.poolFuncs
 
 	sortTuples(tuples)
 	pools := make([]*ImageRGBAPool, len(tuples))
 	for i, t := range tuples {
-		pools[i] = NewImageRGBAPool(t.poolSize, t.rect, poolFuncs...)
+		pools[i] = NewImageRGBAPool(t.poolSize, t.rect, mOpt.poolFuncs...)
 	}
 	return &MultiImageRGBAPool{
 		tuples: tuples,
@@ -118,6 +117,63 @@ func (b *MultiImageRGBAPool) GetRef(r image.Rectangle) *ImageRGBARef {
 }
 
 func (b *MultiImageRGBAPool) Put(pix []uint8, r image.Rectangle) bool {
+	if pool, ok := b.find(r); ok {
+		return pool.Put(pix)
+	}
+	// discard
+	return false
+}
+
+type MultiImageNRGBAPool struct {
+	tuples []imagepoolTuple
+	pools  []*ImageNRGBAPool
+}
+
+func NewMultiImageNRGBAPool(funcs ...multiImageBufferPoolOptionFunc) *MultiImageNRGBAPool {
+	mOpt := newMultiImageBufferPoolOption()
+	for _, fn := range funcs {
+		fn(mOpt)
+	}
+
+	tuples := uniqImagepoolTuple(mOpt.tuples)
+
+	sortTuples(tuples)
+	pools := make([]*ImageNRGBAPool, len(tuples))
+	for i, t := range tuples {
+		pools[i] = NewImageNRGBAPool(t.poolSize, t.rect, mOpt.poolFuncs...)
+	}
+	return &MultiImageNRGBAPool{
+		tuples: tuples,
+		pools:  pools,
+	}
+}
+
+func (b *MultiImageNRGBAPool) find(r image.Rectangle) (*ImageNRGBAPool, bool) {
+	if r.Empty() {
+		return nil, false
+	}
+
+	for i, t := range b.tuples {
+		if rectIn(t.rect, r) {
+			return b.pools[i], true
+		}
+	}
+	return nil, false
+}
+
+func (b *MultiImageNRGBAPool) GetRef(r image.Rectangle) *ImageNRGBARef {
+	if pool, ok := b.find(r); ok {
+		return pool.GetRef()
+	}
+
+	pool := &ImageNRGBAPool{}
+	pool.init(r)
+
+	pix := make([]uint8, pool.length)
+	return pool.createImageNRGBARef(pix, b.pools[len(b.pools)-1])
+}
+
+func (b *MultiImageNRGBAPool) Put(pix []uint8, r image.Rectangle) bool {
 	if pool, ok := b.find(r); ok {
 		return pool.Put(pix)
 	}

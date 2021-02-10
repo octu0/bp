@@ -99,6 +99,48 @@ func (b *ImageRGBAPool) Cap() int {
 	return cap(b.pool)
 }
 
+type ImageNRGBAPool struct {
+	ImageRGBAPool
+}
+
+func NewImageNRGBAPool(poolSize int, rect image.Rectangle, funcs ...optionFunc) *ImageNRGBAPool {
+	opt := newOption()
+	for _, fn := range funcs {
+		fn(opt)
+	}
+
+	b := new(ImageNRGBAPool)
+	b.pool = make(chan []uint8, poolSize)
+	b.init(rect)
+
+	if opt.preload {
+		b.preload(opt.preloadRate)
+	}
+	return b
+}
+
+func (b *ImageNRGBAPool) createImageNRGBARef(pix []uint8, pool *ImageNRGBAPool) *ImageNRGBARef {
+	ref := newImageNRGBARef(pix, &image.NRGBA{
+		Pix:    pix,
+		Stride: b.stride,
+		Rect:   b.rect,
+	}, pool)
+	ref.setFinalizer()
+	return ref
+}
+
+func (b *ImageNRGBAPool) GetRef() *ImageNRGBARef {
+	var pix []uint8
+	select {
+	case pix = <-b.pool:
+		// reuse exists pool
+	default:
+		// create []uint8
+		pix = make([]uint8, b.length)
+	}
+	return b.createImageNRGBARef(pix, b)
+}
+
 type ImageYCbCrPool struct {
 	pool     chan []uint8
 	rect     image.Rectangle
