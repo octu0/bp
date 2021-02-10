@@ -56,6 +56,18 @@ func TestRefValue(t *testing.T) {
 			tt.Errorf("same value")
 		}
 	})
+	t.Run("image.NRGBA", func(tt *testing.T) {
+		img := image.NewNRGBA(image.Rect(0, 0, 10, 10))
+		b := newImageNRGBARef(img.Pix, img, nil)
+
+		d := b.Image()
+		if d.Bounds().Eq(image.Rect(0, 0, 10, 10)) != true {
+			tt.Errorf("same size")
+		}
+		if bytes.Equal(d.Pix, img.Pix) != true {
+			tt.Errorf("same value")
+		}
+	})
 	t.Run("image.YCbCr", func(tt *testing.T) {
 		img := image.NewYCbCr(image.Rect(0, 0, 10, 10), image.YCbCrSubsampleRatio420)
 		c := cap(img.Y) + cap(img.Cb) + cap(img.Cr)
@@ -122,6 +134,12 @@ func TestRefRelease(t *testing.T) {
 		img := image.NewRGBA(image.Rect(0, 0, 10, 10))
 		p := NewImageRGBAPool(1, image.Rect(0, 0, 10, 10))
 		b := newImageRGBARef(img.Pix, img, p)
+		testRelease(tt, b)
+	})
+	t.Run("image.NRGBA", func(tt *testing.T) {
+		img := image.NewNRGBA(image.Rect(0, 0, 10, 10))
+		p := NewImageNRGBAPool(1, image.Rect(0, 0, 10, 10))
+		b := newImageNRGBARef(img.Pix, img, p)
 		testRelease(tt, b)
 	})
 	t.Run("image.YCbCrPool", func(tt *testing.T) {

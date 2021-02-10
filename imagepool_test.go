@@ -168,6 +168,61 @@ func TestImageRGBAPoolBufSize(t *testing.T) {
 	})
 }
 
+func TestImageNRGBAPoolBufSize(t *testing.T) {
+	t.Run("getsamecap", func(tt *testing.T) {
+		rect := image.Rect(0, 0, 100, 100)
+		pool := NewImageNRGBAPool(10, rect)
+		img := image.NewNRGBA(rect)
+
+		d1 := pool.GetRef()
+		d2 := pool.GetRef()
+		if cap(d1.pix) != cap(img.Pix) {
+			tt.Errorf("buf size = %d", cap(img.Pix))
+		}
+		if cap(d2.pix) != cap(img.Pix) {
+			tt.Errorf("buf size = %d", cap(img.Pix))
+		}
+	})
+	t.Run("getput/smallcap", func(tt *testing.T) {
+		rect := image.Rect(0, 0, 100, 100)
+		pool := NewImageNRGBAPool(10, rect)
+		img := image.NewNRGBA(rect)
+
+		r1 := image.Rect(0, 0, 64, 36)
+		i1 := image.NewNRGBA(r1)
+		if pool.Put(i1.Pix) {
+			tt.Errorf("discard small pix")
+		}
+
+		d1 := pool.GetRef()
+		if cap(d1.pix) != cap(img.Pix) {
+			tt.Errorf("discard small pix = %d", cap(d1.pix))
+		}
+		if len(d1.pix) != len(img.Pix) {
+			tt.Errorf("discard small pix")
+		}
+	})
+	t.Run("getput/largecap", func(tt *testing.T) {
+		rect := image.Rect(0, 0, 100, 100)
+		pool := NewImageNRGBAPool(10, rect)
+		img := image.NewNRGBA(rect)
+
+		r1 := image.Rect(0, 0, 640, 360)
+		i1 := image.NewNRGBA(r1)
+		if pool.Put(i1.Pix) != true {
+			tt.Errorf("allow large pix")
+		}
+
+		d1 := pool.GetRef()
+		if cap(d1.pix) == cap(img.Pix) {
+			tt.Errorf("large pix ok")
+		}
+		if len(d1.pix) != len(img.Pix) {
+			tt.Errorf("same len")
+		}
+	})
+}
+
 func TestImageYCbCrPoolBufSize(t *testing.T) {
 	t.Run("getsamecap", func(tt *testing.T) {
 		rect := image.Rect(0, 0, 100, 100)
@@ -307,6 +362,76 @@ func TestImageRGBAPoolCapLen(t *testing.T) {
 	})
 }
 
+func TestImageNRGBAPoolCapLen(t *testing.T) {
+	t.Run("getput", func(tt *testing.T) {
+		r := image.Rect(0, 0, 16, 9)
+		p := NewImageNRGBAPool(10, r)
+		if 0 != p.Len() {
+			tt.Errorf("initial len 0")
+		}
+		if 10 != p.Cap() {
+			tt.Errorf("initial cap 10")
+		}
+
+		data := p.GetRef()
+		if 0 != p.Len() {
+			tt.Errorf("initial len 0")
+		}
+		if 10 != p.Cap() {
+			tt.Errorf("initial cap 10")
+		}
+		p.Put(data.pix)
+
+		if 1 != p.Len() {
+			tt.Errorf("put one")
+		}
+		if 10 != p.Cap() {
+			tt.Errorf("initial cap 10")
+		}
+
+		d1 := p.GetRef()
+		if 0 != p.Len() {
+			tt.Errorf("acquire pool")
+		}
+		p.Put(d1.pix)
+		if 1 != p.Len() {
+			tt.Errorf("release pool")
+		}
+	})
+	t.Run("maxcap", func(tt *testing.T) {
+		r := image.Rect(0, 0, 16, 9)
+		p := NewImageNRGBAPool(10, r)
+		s := make([]*ImageNRGBARef, 0)
+		for i := 0; i < 10; i += 1 {
+			r := p.GetRef()
+			s = append(s, r)
+		}
+		for _, r := range s {
+			p.Put(r.pix)
+		}
+
+		if 10 != p.Len() {
+			tt.Errorf("fill-ed pool: %d", p.Len())
+		}
+		if 10 != p.Cap() {
+			tt.Errorf("max capacity = 10")
+		}
+
+		i1 := image.NewNRGBA(r)
+		d1 := newImageNRGBARef(i1.Pix, i1, p)
+		i2 := image.NewNRGBA(r)
+		d2 := newImageNRGBARef(i2.Pix, i2, p)
+		p.Put(d1.pix)
+		p.Put(d2.pix)
+		if 10 != p.Len() {
+			tt.Errorf("fixed size pool")
+		}
+		if 10 != p.Cap() {
+			tt.Errorf("max capacity = 10")
+		}
+	})
+}
+
 func TestImageYCbCrPoolCapLen(t *testing.T) {
 	t.Run("getput", func(tt *testing.T) {
 		r := image.Rect(0, 0, 16, 9)
@@ -418,6 +543,15 @@ func TestYCbCrPoolPanic(t *testing.T) {
 func TestImageRGBAPoolPreload(t *testing.T) {
 	r := image.Rect(0, 0, 100, 100)
 	p := NewImageRGBAPool(12, r, Preload(true))
+	l := int(float64(12) * defaultPreloadRate)
+	if p.Len() != l {
+		t.Errorf("preloaded buffer = %d", p.Len())
+	}
+}
+
+func TestImageNRGBAPoolPreload(t *testing.T) {
+	r := image.Rect(0, 0, 100, 100)
+	p := NewImageNRGBAPool(12, r, Preload(true))
 	l := int(float64(12) * defaultPreloadRate)
 	if p.Len() != l {
 		t.Errorf("preloaded buffer = %d", p.Len())
