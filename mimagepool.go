@@ -106,14 +106,18 @@ func (b *MultiImageRGBAPool) find(r image.Rectangle) (*ImageRGBAPool, bool) {
 
 func (b *MultiImageRGBAPool) GetRef(r image.Rectangle) *ImageRGBARef {
 	if pool, ok := b.find(r); ok {
-		return pool.GetRef()
+		ref := pool.GetRef()
+		b.adjust(ref, r)
+		return ref
 	}
 
 	pool := &ImageRGBAPool{}
 	pool.init(r)
 
 	pix := make([]uint8, pool.length)
-	return pool.createImageRGBARef(pix, b.pools[len(b.pools)-1])
+	ref := pool.createImageRGBARef(pix, b.pools[len(b.pools)-1])
+	b.adjust(ref, r)
+	return ref
 }
 
 func (b *MultiImageRGBAPool) Put(pix []uint8, r image.Rectangle) bool {
@@ -122,6 +126,11 @@ func (b *MultiImageRGBAPool) Put(pix []uint8, r image.Rectangle) bool {
 	}
 	// discard
 	return false
+}
+
+func (b *MultiImageRGBAPool) adjust(ref *ImageRGBARef, r image.Rectangle) {
+	ref.Img.Rect = r
+	ref.Img.Stride = imageRGBAStride(r)
 }
 
 type MultiImageNRGBAPool struct {
@@ -163,14 +172,18 @@ func (b *MultiImageNRGBAPool) find(r image.Rectangle) (*ImageNRGBAPool, bool) {
 
 func (b *MultiImageNRGBAPool) GetRef(r image.Rectangle) *ImageNRGBARef {
 	if pool, ok := b.find(r); ok {
-		return pool.GetRef()
+		ref := pool.GetRef()
+		b.adjust(ref, r)
+		return ref
 	}
 
 	pool := &ImageNRGBAPool{}
 	pool.init(r)
 
 	pix := make([]uint8, pool.length)
-	return pool.createImageNRGBARef(pix, b.pools[len(b.pools)-1])
+	ref := pool.createImageNRGBARef(pix, b.pools[len(b.pools)-1])
+	b.adjust(ref, r)
+	return ref
 }
 
 func (b *MultiImageNRGBAPool) Put(pix []uint8, r image.Rectangle) bool {
@@ -179,6 +192,11 @@ func (b *MultiImageNRGBAPool) Put(pix []uint8, r image.Rectangle) bool {
 	}
 	// discard
 	return false
+}
+
+func (b *MultiImageNRGBAPool) adjust(ref *ImageNRGBARef, r image.Rectangle) {
+	ref.Img.Rect = r
+	ref.Img.Stride = imageRGBAStride(r)
 }
 
 type MultiImageYCbCrPool struct {
@@ -218,14 +236,18 @@ func (b *MultiImageYCbCrPool) find(r image.Rectangle) (*ImageYCbCrPool, bool) {
 
 func (b *MultiImageYCbCrPool) GetRef(r image.Rectangle) *ImageYCbCrRef {
 	if pool, ok := b.find(r); ok {
-		return pool.GetRef()
+		ref := pool.GetRef()
+		b.adjust(ref, r)
+		return ref
 	}
 
 	pool := &ImageYCbCrPool{}
 	pool.init(r, b.sample)
 
 	pix := make([]uint8, pool.length)
-	return pool.createImageYCbCrRef(pix, b.pools[len(b.pools)-1])
+	ref := pool.createImageYCbCrRef(pix, b.pools[len(b.pools)-1])
+	b.adjust(ref, r)
+	return ref
 }
 
 func (b *MultiImageYCbCrPool) Put(pix []uint8, r image.Rectangle) bool {
@@ -234,4 +256,21 @@ func (b *MultiImageYCbCrPool) Put(pix []uint8, r image.Rectangle) bool {
 	}
 	// discard
 	return false
+}
+
+func (b *MultiImageYCbCrPool) adjust(ref *ImageYCbCrRef, r image.Rectangle) {
+	w, h := r.Dx(), r.Dy()
+	cw, ch := yuvSize(r, b.sample)
+
+	i0 := (w * h) + (0 * cw * ch)
+	i1 := (w * h) + (1 * cw * ch)
+	i2 := (w * h) + (2 * cw * ch)
+
+	ref.Img.Y = ref.pix[0:i0:i0]
+	ref.Img.Cb = ref.pix[i0:i1:i1]
+	ref.Img.Cr = ref.pix[i1:i2:i2]
+
+	ref.Img.Rect = r
+	ref.Img.YStride = w
+	ref.Img.CStride = cw
 }
