@@ -40,7 +40,7 @@ func (b *ImageRGBAPool) init(rect image.Rectangle) {
 	b.rect = rect
 	b.width = rect.Dx()
 	b.height = rect.Dy()
-	b.stride = rect.Dx() * 4
+	b.stride = imageRGBAStride(rect)
 	b.length = rect.Dx() * rect.Dy() * 4
 }
 
@@ -156,9 +156,9 @@ type ImageYCbCrPool struct {
 func yuvSize(rect image.Rectangle, sample image.YCbCrSubsampleRatio) (int, int) {
 	w, h := rect.Dx(), rect.Dy()
 	if sample == image.YCbCrSubsampleRatio420 {
-		y := ((rect.Max.X + 1) / 2) - (rect.Min.X / 2)
-		uv := ((rect.Max.Y + 1) / 2) - (rect.Min.Y / 2)
-		return y, uv
+		cw := ((rect.Max.X + 1) / 2) - (rect.Min.X / 2)
+		ch := ((rect.Max.Y + 1) / 2) - (rect.Min.Y / 2)
+		return cw, ch
 	}
 	// 4:4:4
 	return w, h
@@ -184,22 +184,31 @@ func NewImageYCbCrPool(poolSize int, rect image.Rectangle, sample image.YCbCrSub
 	}
 	return b
 }
+
 func (b *ImageYCbCrPool) init(rect image.Rectangle, sample image.YCbCrSubsampleRatio) {
 	w, h := rect.Dx(), rect.Dy()
-	y, uv := yuvSize(rect, sample)
+	cw, ch := yuvSize(rect, sample)
 
-	i0 := (w * h) + (0 * y * uv)
-	i1 := (w * h) + (1 * y * uv)
-	i2 := (w * h) + (2 * y * uv)
+	i0 := (w * h) + (0 * cw * ch)
+	i1 := (w * h) + (1 * cw * ch)
+	i2 := (w * h) + (2 * cw * ch)
 
 	b.rect = rect
 	b.sample = sample
 	b.yIdx = i0
 	b.uIdx = i1
 	b.vIdx = i2
-	b.strideY = y
-	b.strideUV = uv
+	b.strideY = w
+	b.strideUV = cw
 	b.length = i2
+}
+
+func (b *ImageYCbCrPool) YStride(stride int) {
+	b.strideY = stride
+}
+
+func (b *ImageYCbCrPool) UVStride(stride int) {
+	b.strideUV = stride
 }
 
 func (b *ImageYCbCrPool) createImageYCbCrRef(pix []uint8, pool *ImageYCbCrPool) *ImageYCbCrRef {
@@ -259,4 +268,8 @@ func (b *ImageYCbCrPool) Len() int {
 
 func (b *ImageYCbCrPool) Cap() int {
 	return cap(b.pool)
+}
+
+func imageRGBAStride(rect image.Rectangle) int {
+	return rect.Dx() * 4
 }
