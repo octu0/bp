@@ -20,14 +20,16 @@ func BenchmarkBytePool(b *testing.B) {
 
 		m2 := new(runtime.MemStats)
 		runtime.ReadMemStats(m2)
-		b.Logf(
-			"%-20s\tTotalAlloc=%5d\tStackInUse=%5d",
-			name,
-			int64(m2.TotalAlloc)-int64(m1.TotalAlloc),
-			int64(m2.StackInuse)-int64(m1.StackInuse),
-			//int64(m2.HeapSys)  - int64(m1.HeapSys),
-			//int64(m2.HeapIdle)   - int64(m1.HeapIdle),
-		)
+		/*
+			b.Logf(
+				"%-20s\tTotalAlloc=%5d\tStackInUse=%5d",
+				name,
+				int64(m2.TotalAlloc)-int64(m1.TotalAlloc),
+				int64(m2.StackInuse)-int64(m1.StackInuse),
+				//int64(m2.HeapSys)  - int64(m1.HeapSys),
+				//int64(m2.HeapIdle)   - int64(m1.HeapIdle),
+			)
+		*/
 	}
 	run("default/8", func(tb *testing.B) {
 		e := chanque.NewExecutor(10, 10)
@@ -148,11 +150,12 @@ func TestBytePoolBufSize(t *testing.T) {
 		p := NewBytePool(10, bufSize)
 		p.Put(make([]byte, 123))
 
-		d1 := p.Get()
-		if cap(d1) != bufSize {
+		if p.Len() != 0 {
 			tt.Errorf("discard over max buf 123 byte")
 		}
-		if len(d1) != bufSize {
+
+		d1 := p.Get()
+		if cap(d1) != bufSize {
 			tt.Errorf("discard over max buf 123 byte")
 		}
 	})
