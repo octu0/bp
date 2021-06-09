@@ -35,11 +35,11 @@ var (
 
 type ByteRef struct {
 	B      []byte
-	pool   *BytePool
+	pool   ByteGetPut
 	closed int32
 }
 
-func newByteRef(data []byte, pool *BytePool) *ByteRef {
+func newByteRef(data []byte, pool ByteGetPut) *ByteRef {
 	return &ByteRef{
 		B:      data,
 		pool:   pool,
@@ -63,18 +63,16 @@ func (b *ByteRef) Release() {
 	if atomic.CompareAndSwapInt32(&b.closed, refInit, refClosed) {
 		runtime.SetFinalizer(b, nil) // clear finalizer
 		b.pool.Put(b.B)
-		b.B = nil
-		b.pool = nil
 	}
 }
 
 type BufferRef struct {
 	Buf    *bytes.Buffer
-	pool   *BufferPool
+	pool   BytesBufferGetPut
 	closed int32
 }
 
-func newBufferRef(data *bytes.Buffer, pool *BufferPool) *BufferRef {
+func newBufferRef(data *bytes.Buffer, pool BytesBufferGetPut) *BufferRef {
 	return &BufferRef{
 		Buf:    data,
 		pool:   pool,
@@ -98,18 +96,16 @@ func (b *BufferRef) Release() {
 	if atomic.CompareAndSwapInt32(&b.closed, refInit, refClosed) {
 		runtime.SetFinalizer(b, nil) // clear
 		b.pool.Put(b.Buf)
-		b.Buf = nil
-		b.pool = nil
 	}
 }
 
 type BufioReaderRef struct {
 	Buf    *bufio.Reader
-	pool   *BufioReaderPool
+	pool   BufioReaderGetPut
 	closed int32
 }
 
-func newBufioReaderRef(data *bufio.Reader, pool *BufioReaderPool) *BufioReaderRef {
+func newBufioReaderRef(data *bufio.Reader, pool BufioReaderGetPut) *BufioReaderRef {
 	return &BufioReaderRef{
 		Buf:    data,
 		pool:   pool,
@@ -133,18 +129,16 @@ func (b *BufioReaderRef) Release() {
 	if atomic.CompareAndSwapInt32(&b.closed, refInit, refClosed) {
 		runtime.SetFinalizer(b, nil) // clear
 		b.pool.Put(b.Buf)
-		b.Buf = nil
-		b.pool = nil
 	}
 }
 
 type BufioWriterRef struct {
 	Buf    *bufio.Writer
-	pool   *BufioWriterPool
+	pool   BufioWriterGetPut
 	closed int32
 }
 
-func newBufioWriterRef(data *bufio.Writer, pool *BufioWriterPool) *BufioWriterRef {
+func newBufioWriterRef(data *bufio.Writer, pool BufioWriterGetPut) *BufioWriterRef {
 	return &BufioWriterRef{
 		Buf:    data,
 		pool:   pool,
@@ -168,19 +162,17 @@ func (b *BufioWriterRef) Release() {
 	if atomic.CompareAndSwapInt32(&b.closed, refInit, refClosed) {
 		runtime.SetFinalizer(b, nil) // clear
 		b.pool.Put(b.Buf)
-		b.Buf = nil
-		b.pool = nil
 	}
 }
 
 type ImageRGBARef struct {
 	Img    *image.RGBA
-	pix    []uint8
-	pool   *ImageRGBAPool
+	pix    []byte
+	pool   ImageRGBAGetPut
 	closed int32
 }
 
-func newImageRGBARef(pix []uint8, img *image.RGBA, pool *ImageRGBAPool) *ImageRGBARef {
+func newImageRGBARef(pix []byte, img *image.RGBA, pool ImageRGBAGetPut) *ImageRGBARef {
 	return &ImageRGBARef{
 		Img:    img,
 		pix:    pix,
@@ -205,20 +197,17 @@ func (b *ImageRGBARef) Release() {
 	if atomic.CompareAndSwapInt32(&b.closed, refInit, refClosed) {
 		runtime.SetFinalizer(b, nil) // clear
 		b.pool.Put(b.pix)
-		b.Img = nil
-		b.pix = nil
-		b.pool = nil
 	}
 }
 
 type ImageNRGBARef struct {
 	Img    *image.NRGBA
-	pix    []uint8
-	pool   *ImageNRGBAPool
+	pix    []byte
+	pool   ImageNRGBAGetPut
 	closed int32
 }
 
-func newImageNRGBARef(pix []uint8, img *image.NRGBA, pool *ImageNRGBAPool) *ImageNRGBARef {
+func newImageNRGBARef(pix []byte, img *image.NRGBA, pool ImageNRGBAGetPut) *ImageNRGBARef {
 	return &ImageNRGBARef{
 		Img:    img,
 		pix:    pix,
@@ -243,20 +232,17 @@ func (b *ImageNRGBARef) Release() {
 	if atomic.CompareAndSwapInt32(&b.closed, refInit, refClosed) {
 		runtime.SetFinalizer(b, nil) // clear
 		b.pool.Put(b.pix)
-		b.Img = nil
-		b.pix = nil
-		b.pool = nil
 	}
 }
 
 type ImageYCbCrRef struct {
 	Img    *image.YCbCr
-	pix    []uint8
-	pool   *ImageYCbCrPool
+	pix    []byte
+	pool   ImageYCbCrGetPut
 	closed int32
 }
 
-func newImageYCbCrRef(pix []uint8, img *image.YCbCr, pool *ImageYCbCrPool) *ImageYCbCrRef {
+func newImageYCbCrRef(pix []byte, img *image.YCbCr, pool ImageYCbCrGetPut) *ImageYCbCrRef {
 	return &ImageYCbCrRef{
 		Img:    img,
 		pix:    pix,
@@ -281,8 +267,5 @@ func (b *ImageYCbCrRef) Release() {
 	if atomic.CompareAndSwapInt32(&b.closed, refInit, refClosed) {
 		runtime.SetFinalizer(b, nil) // clear
 		b.pool.Put(b.pix)
-		b.Img = nil
-		b.pix = nil
-		b.pool = nil
 	}
 }
