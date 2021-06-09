@@ -11,6 +11,7 @@ It is inspired by [bpool](https://github.com/oxtoacart/bpool) and its many featu
 `bp` provides the following pool types
 - `bp.BufferPool` which provides fixed-size pool of [*bytes.Buffers](http://golang.org/pkg/bytes/#Buffer)
 - `bp.BytePool` which provides fixed-size pool of `[]byte` slice 
+- `bp.MmapBytePool` Same as BytePool, but uses mmap to allocate the slices
 - `bp.BufioReaderPool` which provides fixed-size pool of [*bufio.Reader](https://golang.org/pkg/bufio/#Reader)
 - `bp.BufioWriterPool` which provides fixed-size pool of [*bufio.Writer](https://golang.org/pkg/bufio/#Writer)
 - `bp.ImageRGBAPool` which provides fixed-size pool of [*image.RGBA](https://golang.org/pkg/image/#RGBA) 
@@ -72,13 +73,6 @@ BenchmarkBufferPool/syncpool/8-8        	  991191	      1206 ns/op	      48 B/op
 BenchmarkBufferPool/syncpool/4096-8     	  967411	      1265 ns/op	      48 B/op	       1 allocs/op
 BenchmarkBufferPool/bufferpool/8-8      	  898627	      1361 ns/op	      48 B/op	       1 allocs/op
 BenchmarkBufferPool/bufferpool/4096-8   	  811107	      1430 ns/op	      48 B/op	       1 allocs/op
---- BENCH: BenchmarkBufferPool
-    bufferpool_test.go:23: default/8           	TotalAlloc=32366736	StackInUse=196608
-    bufferpool_test.go:23: default/4096        	TotalAlloc=31303392	StackInUse=    0
-    bufferpool_test.go:23: syncpool/8          	TotalAlloc=48150368	StackInUse=32768
-    bufferpool_test.go:23: syncpool/4096       	TotalAlloc=47137120	StackInUse=65536
-    bufferpool_test.go:23: bufferpool/8        	TotalAlloc=43688064	StackInUse=32768
-    bufferpool_test.go:23: bufferpool/4096     	TotalAlloc=39542400	StackInUse=    0
 PASS
 ok  	github.com/octu0/bp	7.274s
 ```
@@ -96,13 +90,6 @@ BenchmarkBytePool/syncpool/8-8        	 1000000	      1165 ns/op	      64 B/op	 
 BenchmarkBytePool/syncpool/4096-8     	 1000000	      1059 ns/op	      64 B/op	       2 allocs/op
 BenchmarkBytePool/bytepool/8-8        	 1027453	      1246 ns/op	      32 B/op	       1 allocs/op
 BenchmarkBytePool/bytepool/4096-8     	  935844	      1299 ns/op	      32 B/op	       1 allocs/op
---- BENCH: BenchmarkBytePool
-    bytepool_test.go:22: default/8           	TotalAlloc=16206528	StackInUse=196608
-    bytepool_test.go:22: default/4096        	TotalAlloc=14669568	StackInUse=    0
-    bytepool_test.go:22: syncpool/8          	TotalAlloc=64755680	StackInUse=    0
-    bytepool_test.go:22: syncpool/4096       	TotalAlloc=65019600	StackInUse=98304
-    bytepool_test.go:22: bytepool/8          	TotalAlloc=59661264	StackInUse=    0
-    bytepool_test.go:22: bytepool/4096       	TotalAlloc=30373840	StackInUse=32768
 PASS
 ok  	github.com/octu0/bp	7.878s
 ```
@@ -120,13 +107,6 @@ BenchmarkBufioReaderPool/syncpool/8-8        	 1000000	      1339 ns/op	    1056
 BenchmarkBufioReaderPool/syncpool/4096-8     	  896155	      1337 ns/op	    1058 B/op	       2 allocs/op
 BenchmarkBufioReaderPool/bufiopool/8-8       	  831057	      1485 ns/op	    1168 B/op	       4 allocs/op
 BenchmarkBufioReaderPool/bufiopool/4096-8    	  836048	      1356 ns/op	    1056 B/op	       2 allocs/op
---- BENCH: BenchmarkBufioReaderPool
-    bufiopool_test.go:25: default/8           	TotalAlloc=1066781768	StackInUse=163840
-    bufiopool_test.go:25: default/4096        	TotalAlloc=3987223264	StackInUse=32768
-    bufiopool_test.go:25: syncpool/8          	TotalAlloc=1067242008	StackInUse=    0
-    bufiopool_test.go:25: syncpool/4096       	TotalAlloc=959685280	StackInUse=65536
-    bufiopool_test.go:25: bufiopool/8         	TotalAlloc=982599648	StackInUse=32768
-    bufiopool_test.go:25: bufiopool/4096      	TotalAlloc=893722624	StackInUse=    0
 PASS
 ok  	github.com/octu0/bp	7.354s
 ```
@@ -144,13 +124,6 @@ BenchmarkImageRGBAPool/syncpool/360-8        	 1000000	      1070 ns/op	      28
 BenchmarkImageRGBAPool/syncpool/1080-8       	 1019760	      1137 ns/op	      89 B/op	       1 allocs/op
 BenchmarkImageRGBAPool/imagepool/360-8       	  818752	      1382 ns/op	     138 B/op	       3 allocs/op
 BenchmarkImageRGBAPool/imagepool/1080-8      	  976969	      1448 ns/op	     137 B/op	       3 allocs/op
---- BENCH: BenchmarkImageRGBAPool
-    imagepool_test.go:23: default/360         	TotalAlloc=48026245264	StackInUse=327680
-    imagepool_test.go:23: default/1080        	TotalAlloc=28505643392	StackInUse=131072
-    imagepool_test.go:23: syncpool/360        	TotalAlloc=54163600	StackInUse=-32768
-    imagepool_test.go:23: syncpool/1080       	TotalAlloc=442226720	StackInUse=    0
-    imagepool_test.go:23: imagepool/360       	TotalAlloc=128383744	StackInUse=32768
-    imagepool_test.go:23: imagepool/1080      	TotalAlloc=151401744	StackInUse=    0
 PASS
 ok  	github.com/octu0/bp	9.034s
 ```
