@@ -113,6 +113,11 @@ func TestRefRelease(t *testing.T) {
 		b := newByteRef([]byte{}, p)
 		testRelease(tt, b)
 	})
+	t.Run("byte_mmap", func(tt *testing.T) {
+		p := NewMmapBytePool(1, 1)
+		b := newByteRef([]byte{}, p)
+		testRelease(tt, b)
+	})
 	t.Run("buffer", func(tt *testing.T) {
 		p := NewBufferPool(1, 1)
 		bf := bytes.NewBuffer(nil)

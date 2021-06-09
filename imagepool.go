@@ -9,7 +9,7 @@ const (
 )
 
 type ImageRGBAPool struct {
-	pool   chan []uint8
+	pool   chan []byte
 	rect   image.Rectangle
 	width  int
 	height int
@@ -24,7 +24,7 @@ func NewImageRGBAPool(poolSize int, rect image.Rectangle, funcs ...optionFunc) *
 	}
 
 	b := &ImageRGBAPool{
-		pool: make(chan []uint8, poolSize),
+		pool: make(chan []byte, poolSize),
 		// other field initialize to b.init(rect, sample)
 	}
 	b.init(rect)
@@ -44,7 +44,7 @@ func (b *ImageRGBAPool) init(rect image.Rectangle) {
 	b.length = rect.Dx() * rect.Dy() * 4
 }
 
-func (b *ImageRGBAPool) createImageRGBARef(pix []uint8, pool *ImageRGBAPool) *ImageRGBARef {
+func (b *ImageRGBAPool) createImageRGBARef(pix []byte, pool *ImageRGBAPool) *ImageRGBARef {
 	ref := newImageRGBARef(pix, &image.RGBA{
 		Pix:    pix,
 		Stride: b.stride,
@@ -55,13 +55,13 @@ func (b *ImageRGBAPool) createImageRGBARef(pix []uint8, pool *ImageRGBAPool) *Im
 }
 
 func (b *ImageRGBAPool) GetRef() *ImageRGBARef {
-	var pix []uint8
+	var pix []byte
 	select {
 	case pix = <-b.pool:
 		// reuse exists pool
 	default:
-		// create []uint8
-		pix = make([]uint8, b.length)
+		// create []byte
+		pix = make([]byte, b.length)
 	}
 	return b.createImageRGBARef(pix, b)
 }
@@ -70,12 +70,12 @@ func (b *ImageRGBAPool) preload(rate float64) {
 	if 0 < cap(b.pool) {
 		preloadSize := int(float64(cap(b.pool)) * rate)
 		for i := 0; i < preloadSize; i += 1 {
-			b.Put(make([]uint8, b.length))
+			b.Put(make([]byte, b.length))
 		}
 	}
 }
 
-func (b *ImageRGBAPool) Put(pix []uint8) bool {
+func (b *ImageRGBAPool) Put(pix []byte) bool {
 	if cap(pix) < b.length {
 		// discard small buffer
 		return false
@@ -110,7 +110,7 @@ func NewImageNRGBAPool(poolSize int, rect image.Rectangle, funcs ...optionFunc) 
 	}
 
 	b := new(ImageNRGBAPool)
-	b.pool = make(chan []uint8, poolSize)
+	b.pool = make(chan []byte, poolSize)
 	b.init(rect)
 
 	if opt.preload {
@@ -119,7 +119,7 @@ func NewImageNRGBAPool(poolSize int, rect image.Rectangle, funcs ...optionFunc) 
 	return b
 }
 
-func (b *ImageNRGBAPool) createImageNRGBARef(pix []uint8, pool *ImageNRGBAPool) *ImageNRGBARef {
+func (b *ImageNRGBAPool) createImageNRGBARef(pix []byte, pool *ImageNRGBAPool) *ImageNRGBARef {
 	ref := newImageNRGBARef(pix, &image.NRGBA{
 		Pix:    pix,
 		Stride: b.stride,
@@ -130,19 +130,19 @@ func (b *ImageNRGBAPool) createImageNRGBARef(pix []uint8, pool *ImageNRGBAPool) 
 }
 
 func (b *ImageNRGBAPool) GetRef() *ImageNRGBARef {
-	var pix []uint8
+	var pix []byte
 	select {
 	case pix = <-b.pool:
 		// reuse exists pool
 	default:
-		// create []uint8
-		pix = make([]uint8, b.length)
+		// create []byte
+		pix = make([]byte, b.length)
 	}
 	return b.createImageNRGBARef(pix, b)
 }
 
 type ImageYCbCrPool struct {
-	pool     chan []uint8
+	pool     chan []byte
 	rect     image.Rectangle
 	sample   image.YCbCrSubsampleRatio
 	yIdx     int
@@ -174,7 +174,7 @@ func NewImageYCbCrPool(poolSize int, rect image.Rectangle, sample image.YCbCrSub
 		panic(notyetSupportedSampleRate)
 	}
 	b := &ImageYCbCrPool{
-		pool: make(chan []uint8, poolSize),
+		pool: make(chan []byte, poolSize),
 		// other field initialize to b.init(rect, sample)
 	}
 	b.init(rect, sample)
@@ -211,7 +211,7 @@ func (b *ImageYCbCrPool) UVStride(stride int) {
 	b.strideUV = stride
 }
 
-func (b *ImageYCbCrPool) createImageYCbCrRef(pix []uint8, pool *ImageYCbCrPool) *ImageYCbCrRef {
+func (b *ImageYCbCrPool) createImageYCbCrRef(pix []byte, pool *ImageYCbCrPool) *ImageYCbCrRef {
 	ref := newImageYCbCrRef(pix, &image.YCbCr{
 		Y:              pix[0:b.yIdx:b.yIdx],
 		Cb:             pix[b.yIdx:b.uIdx:b.uIdx],
@@ -226,13 +226,13 @@ func (b *ImageYCbCrPool) createImageYCbCrRef(pix []uint8, pool *ImageYCbCrPool) 
 }
 
 func (b *ImageYCbCrPool) GetRef() *ImageYCbCrRef {
-	var pix []uint8
+	var pix []byte
 	select {
 	case pix = <-b.pool:
 		// reuse exists pool
 	default:
-		// create []uint8
-		pix = make([]uint8, b.length)
+		// create []byte
+		pix = make([]byte, b.length)
 	}
 	return b.createImageYCbCrRef(pix, b)
 }
@@ -241,12 +241,12 @@ func (b *ImageYCbCrPool) preload(rate float64) {
 	if 0 < cap(b.pool) {
 		preloadSize := int(float64(cap(b.pool)) * rate)
 		for i := 0; i < preloadSize; i += 1 {
-			b.Put(make([]uint8, b.length))
+			b.Put(make([]byte, b.length))
 		}
 	}
 }
 
-func (b *ImageYCbCrPool) Put(pix []uint8) bool {
+func (b *ImageYCbCrPool) Put(pix []byte) bool {
 	if cap(pix) < b.length {
 		// discard small buffer
 		return false

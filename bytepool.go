@@ -47,15 +47,14 @@ func (b *BytePool) preload(rate float64) {
 }
 
 func (b *BytePool) Get() []byte {
-	var data []byte
 	select {
-	case data = <-b.pool:
+	case data := <-b.pool:
 		// reuse exists pool
+		return data[:b.bufSize]
 	default:
 		// create []byte
-		data = make([]byte, b.bufSize)
+		return make([]byte, b.bufSize)
 	}
-	return data
 }
 
 func (b *BytePool) Put(data []byte) bool {
@@ -70,7 +69,7 @@ func (b *BytePool) Put(data []byte) bool {
 	}
 
 	select {
-	case b.pool <- data[:b.bufSize]:
+	case b.pool <- data[:b.bufSize:b.bufSize]:
 		// free capacity
 		return true
 	default:
