@@ -60,6 +60,14 @@ func (b *MmapBytePool) preload(rate float64) {
 	}
 }
 
+func (b *MmapBytePool) GetRef() *ByteRef {
+	data := b.Get()
+
+	ref := newByteRef(data, b)
+	ref.setFinalizer()
+	return ref
+}
+
 func (b *MmapBytePool) Get() []byte {
 	select {
 	case data := <-b.pool:
