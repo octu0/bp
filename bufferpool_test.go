@@ -21,14 +21,16 @@ func BenchmarkBufferPool(b *testing.B) {
 
 		m2 := new(runtime.MemStats)
 		runtime.ReadMemStats(m2)
-		b.Logf(
-			"%-20s\tTotalAlloc=%5d\tStackInUse=%5d",
-			name,
-			int64(m2.TotalAlloc)-int64(m1.TotalAlloc),
-			int64(m2.StackInuse)-int64(m1.StackInuse),
-			//int64(m2.HeapSys)  - int64(m1.HeapSys),
-			//int64(m2.HeapIdle)   - int64(m1.HeapIdle),
-		)
+		/*
+			b.Logf(
+				"%-20s\tTotalAlloc=%5d\tStackInUse=%5d",
+				name,
+				int64(m2.TotalAlloc)-int64(m1.TotalAlloc),
+				int64(m2.StackInuse)-int64(m1.StackInuse),
+				//int64(m2.HeapSys)  - int64(m1.HeapSys),
+				//int64(m2.HeapIdle)   - int64(m1.HeapIdle),
+			)
+		*/
 	}
 	run("default/8", func(tb *testing.B) {
 		tb.StopTimer()
