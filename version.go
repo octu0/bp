@@ -1,5 +1,5 @@
 package bp
 
 const (
-	Version string = "1.1.1"
+	Version string = "1.1.2"
 )
