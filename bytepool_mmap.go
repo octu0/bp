@@ -3,6 +3,8 @@
 package bp
 
 import (
+	"runtime"
+
 	"golang.org/x/sys/unix"
 )
 
@@ -43,7 +45,18 @@ func NewMmapBytePool(poolSize, bufSize int, funcs ...optionFunc) *MmapBytePool {
 		b.preload(opt.preloadRate)
 	}
 
+	runtime.SetFinalizer(b, finalizeMmapBytePool)
+
 	return b
+}
+
+func finalizeMmapBytePool(b *MmapBytePool) {
+	runtime.SetFinalizer(b, nil)
+
+	close(b.pool)
+	for data := range b.pool {
+		unix.Munmap(data)
+	}
 }
 
 func (b *MmapBytePool) preload(rate float64) {
