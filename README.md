@@ -20,6 +20,7 @@ It is inspired by [bpool](https://github.com/oxtoacart/bpool) and its many featu
 It also provides a MultiPool to bundle multiple pools:
 
 - MultiBytePool
+- MultiMmapBytePool
 - MultiBufferPool
 - MultiImageRGBAPool
 - MultiImageYCbCrPool
