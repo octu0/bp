@@ -4,8 +4,74 @@ import (
 	"bufio"
 	"bytes"
 	"image"
+	"strings"
 	"testing"
+	"time"
+
+	"github.com/octu0/chanque"
 )
+
+func BenchmarkRef(b *testing.B) {
+	r4096 := strings.NewReader(strings.Repeat("@", 4096))
+	w4096 := []byte(strings.Repeat("@", 4096))
+
+	b.Run("byte", func(tb *testing.B) {
+		tb.Run("Get", func(bb *testing.B) {
+			e := chanque.NewExecutor(10, 10)
+			defer e.Release()
+
+			p := NewBytePool(e.MaxWorker(), 4096)
+			for i := 0; i < tb.N; i += 1 {
+				e.Submit(func() {
+					s := p.Get()
+					defer p.Put(s)
+					r4096.Read(s)
+				})
+			}
+		})
+		tb.Run("GetRef", func(bb *testing.B) {
+			e := chanque.NewExecutor(10, 10)
+			defer e.Release()
+
+			p := NewBytePool(e.MaxWorker(), 8)
+			for i := 0; i < tb.N; i += 1 {
+				e.Submit(func() {
+					s := p.GetRef()
+					defer s.Release()
+					r4096.Read(s.B)
+				})
+			}
+		})
+	})
+	b.Run("buffer", func(tb *testing.B) {
+		tb.Run("Get", func(bb *testing.B) {
+			e := chanque.NewExecutor(10, 10)
+			defer e.Release()
+
+			p := NewBufferPool(e.MaxWorker(), 4096)
+			for i := 0; i < tb.N; i += 1 {
+				e.Submit(func() {
+					s := p.Get()
+					defer p.Put(s)
+					s.Write(w4096)
+				})
+			}
+		})
+		tb.Run("GetRef", func(bb *testing.B) {
+			e := chanque.NewExecutor(10, 10)
+			defer e.Release()
+
+			p := NewBufferPool(e.MaxWorker(), 4096)
+			for i := 0; i < tb.N; i += 1 {
+				e.Submit(func() {
+					s := p.GetRef()
+					defer s.Release()
+					s.Buf.Write(w4096)
+				})
+			}
+		})
+	})
+}
 
 func TestRefValue(t *testing.T) {
 	t.Run("byte", func(tt *testing.T) {
@@ -92,6 +158,7 @@ func TestRefValue(t *testing.T) {
 		}
 	})
 }
+
 func TestRefRelease(t *testing.T) {
 	testRelease := func(tt *testing.T, r Ref) {
 		r.Release()
@@ -151,6 +218,16 @@ func TestRefRelease(t *testing.T) {
 		img := image.NewYCbCr(image.Rect(0, 0, 10, 10), image.YCbCrSubsampleRatio420)
 		p := NewImageYCbCrPool(1, image.Rect(0, 0, 10, 10), image.YCbCrSubsampleRatio420)
 		b := newImageYCbCrRef([]byte{}, img, p)
+		testRelease(tt, b)
+	})
+	t.Run("time.Ticker", func(tt *testing.T) {
+		p := NewTickerPool(1)
+		b := newTickerRef(time.NewTicker(1*time.Millisecond), p)
+		testRelease(tt, b)
+	})
+	t.Run("time.Timer", func(tt *testing.T) {
+		p := NewTimerPool(1)
+		b := newTimerRef(time.NewTimer(1*time.Millisecond), p)
 		testRelease(tt, b)
 	})
 }

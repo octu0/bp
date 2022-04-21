@@ -16,6 +16,9 @@ It is inspired by [bpool](https://github.com/oxtoacart/bpool) and its many featu
 - `bp.BufioWriterPool` which provides fixed-size pool of [*bufio.Writer](https://golang.org/pkg/bufio/#Writer)
 - `bp.ImageRGBAPool` which provides fixed-size pool of [*image.RGBA](https://golang.org/pkg/image/#RGBA) 
 - `bp.ImageYCbCrPool` which provides fixed-size pool of [*image.YCbCr](https://golang.org/pkg/image/#YCbCr) 
+- `bp.CopyIOPool` which provides fixed-size pool of [io.CopyBuffer](https://golang.org/pkg/io#CopyBuffer) and [io.ReadAll](https://golang.org/pkg/io#ReadAll)
+- `bp.TickerPool` which provides fixed-size pool of [*time.Ticker](https://golang.org/pkg/time#Ticker)
+- `bp.TimerPool` which provides fixed-size pool of [*time.Timer](https://golang.org/pkg/time#Timer)
 
 It also provides a MultiPool to bundle multiple pools:
 
@@ -69,14 +72,14 @@ goos: darwin
 goarch: amd64
 pkg: github.com/octu0/bp
 cpu: Intel(R) Core(TM) i7-8569U CPU @ 2.80GHz
-BenchmarkBufferPool/default/8-8         	 1224789	       990.2 ns/op	      32 B/op	       1 allocs/op
-BenchmarkBufferPool/default/4096-8      	 1000000	      1103 ns/op	      32 B/op	       1 allocs/op
-BenchmarkBufferPool/syncpool/8-8        	 1000000	      1055 ns/op	      48 B/op	       1 allocs/op
-BenchmarkBufferPool/syncpool/4096-8     	 1000000	      1108 ns/op	      48 B/op	       1 allocs/op
-BenchmarkBufferPool/bufferpool/8-8      	 1000000	      1155 ns/op	      48 B/op	       1 allocs/op
-BenchmarkBufferPool/bufferpool/4096-8   	  981954	      1189 ns/op	      48 B/op	       1 allocs/op
+BenchmarkBufferPool/default/8-8         	 1608904	       768.9 ns/op	      32 B/op	       1 allocs/op
+BenchmarkBufferPool/default/4096-8      	 1421576	       791.1 ns/op	      32 B/op	       1 allocs/op
+BenchmarkBufferPool/syncpool/8-8        	 1584180	       743.3 ns/op	      48 B/op	       1 allocs/op
+BenchmarkBufferPool/syncpool/4096-8     	 1505594	       798.4 ns/op	      48 B/op	       1 allocs/op
+BenchmarkBufferPool/bufferpool/8-8      	 1439310	       917.2 ns/op	      48 B/op	       1 allocs/op
+BenchmarkBufferPool/bufferpool/4096-8   	 1225413	       967.4 ns/op	      48 B/op	       1 allocs/op
 PASS
-ok  	github.com/octu0/bp	7.899s
+ok  	github.com/octu0/bp	12.309s
 ```
 
 ## `[]byte`: sync.Pool vs BytePool
@@ -87,14 +90,14 @@ goos: darwin
 goarch: amd64
 pkg: github.com/octu0/bp
 cpu: Intel(R) Core(TM) i7-8569U CPU @ 2.80GHz
-BenchmarkBytePool/default/8-8         	 1294598	       941.2 ns/op	      16 B/op	       1 allocs/op
-BenchmarkBytePool/default/4096-8      	 1000000	      1031 ns/op	      16 B/op	       1 allocs/op
-BenchmarkBytePool/syncpool/8-8        	 1000000	      1069 ns/op	      48 B/op	       2 allocs/op
-BenchmarkBytePool/syncpool/4096-8     	 1000000	      1075 ns/op	      48 B/op	       2 allocs/op
-BenchmarkBytePool/bytepool/8-8        	 1213732	      1023 ns/op	      24 B/op	       1 allocs/op
-BenchmarkBytePool/bytepool/4096-8     	 1000000	      1127 ns/op	      24 B/op	       1 allocs/op
+BenchmarkBytePool/default/8-8         	 1827867	       653.8 ns/op	      16 B/op	       1 allocs/op
+BenchmarkBytePool/default/4096-8      	 1562638	       788.3 ns/op	      16 B/op	       1 allocs/op
+BenchmarkBytePool/syncpool/8-8        	 1643428	       763.2 ns/op	      48 B/op	       2 allocs/op
+BenchmarkBytePool/syncpool/4096-8     	 1586283	       803.8 ns/op	      48 B/op	       2 allocs/op
+BenchmarkBytePool/bytepool/8-8        	 1357020	       904.1 ns/op	      24 B/op	       1 allocs/op
+BenchmarkBytePool/bytepool/4096-8     	 1359921	       846.6 ns/op	      24 B/op	       1 allocs/op
 PASS
-ok  	github.com/octu0/bp	8.780s
+ok  	github.com/octu0/bp	12.105s
 ```
 
 ## `bufio.Reader`: sync.Pool vs BufioReaderPool
@@ -123,14 +126,14 @@ goos: darwin
 goarch: amd64
 pkg: github.com/octu0/bp
 cpu: Intel(R) Core(TM) i7-8569U CPU @ 2.80GHz
-BenchmarkImageRGBAPool/default/360-8         	   38256	     29911 ns/op	  925739 B/op	       3 allocs/op
-BenchmarkImageRGBAPool/default/1080-8        	    1995	    591596 ns/op	 8286139 B/op	       3 allocs/op
-BenchmarkImageRGBAPool/syncpool/360-8        	 1316624	      1042 ns/op	      26 B/op	       1 allocs/op
-BenchmarkImageRGBAPool/syncpool/1080-8       	 1000000	      1098 ns/op	      82 B/op	       1 allocs/op
-BenchmarkImageRGBAPool/imagepool/360-8       	 1006983	      1326 ns/op	     153 B/op	       3 allocs/op
-BenchmarkImageRGBAPool/imagepool/1080-8      	  871188	      1343 ns/op	     154 B/op	       3 allocs/op
+BenchmarkImageRGBAPool/default/360-8         	   31308	     36206 ns/op	  925814 B/op	       3 allocs/op
+BenchmarkImageRGBAPool/default/1080-8        	    4639	    821211 ns/op	 8282518 B/op	       3 allocs/op
+BenchmarkImageRGBAPool/syncpool/360-8        	 1657608	       684.7 ns/op	      20 B/op	       1 allocs/op
+BenchmarkImageRGBAPool/syncpool/1080-8       	 1635321	       696.2 ns/op	      56 B/op	       1 allocs/op
+BenchmarkImageRGBAPool/imagepool/360-8       	 1000000	      1190 ns/op	     151 B/op	       3 allocs/op
+BenchmarkImageRGBAPool/imagepool/1080-8      	 1000000	      1105 ns/op	     151 B/op	       3 allocs/op
 PASS
-ok  	github.com/octu0/bp	10.637s
+ok  	github.com/octu0/bp	11.502s
 ```
 
 ## io.Copy vs CopyIOPool.Copy Benchmark
@@ -143,16 +146,16 @@ goos: darwin
 goarch: amd64
 pkg: github.com/octu0/bp
 cpu: Intel(R) Core(TM) i7-8569U CPU @ 2.80GHz
-BenchmarkIoCopy-8                	  452194	      2650 ns/op	   32816 B/op	       3 allocs/op
-BenchmarkIoCopyPoolDefault-8     	  575596	      2064 ns/op	   16608 B/op	       7 allocs/op
-BenchmarkIoCopyPoolFixedSize-8   	 2274831	       522.1 ns/op	      48 B/op	       2 allocs/op
+BenchmarkIoCopy-8                	  461892	      2637 ns/op	   32816 B/op	       3 allocs/op
+BenchmarkIoCopyPoolDefault-8     	  619404	      1982 ns/op	   16608 B/op	       7 allocs/op
+BenchmarkIoCopyPoolFixedSize-8   	 2858724	       410.9 ns/op	      48 B/op	       2 allocs/op
 PASS
-ok  	github.com/octu0/bp	4.189s
+ok  	github.com/octu0/bp	4.126s
 ```
 
 ## ioutil.ReadAll vs CopyIOPool.ReadAll Benchmark
 
-similarly, CopyIOPool.ReadAll reduces allocation of [ioutil.ReadAll](https://golang.org/pkg/io/ioutil/#ReadAll)
+similarly, CopyIOPool.ReadAll reduces allocation of [io.ReadAll](https://golang.org/pkg/io#ReadAll)
 
 ```bash
 $ go test -bench=BenchmarkIoReadAll -benchmem ./
@@ -165,6 +168,36 @@ BenchmarkIoReadAllPoolDefault-8     	    3057	    378599 ns/op	 4063444 B/op	   
 BenchmarkIoReadAllPoolFixedSize-8   	    3180	    378923 ns/op	 4046892 B/op	       8 allocs/op
 PASS
 ok  	github.com/octu0/bp	3.718s
+```
+
+## `*time.Ticker`: sync.Pool vs `TickerPool`
+
+```bash
+$ go test -bench=BenchmarkTickerPool -benchmem ./
+goos: darwin
+goarch: amd64
+pkg: github.com/octu0/bp
+cpu: Intel(R) Core(TM) i7-8569U CPU @ 2.80GHz
+BenchmarkTickerPool/default-8         	  114298	     10731 ns/op	     224 B/op	       4 allocs/op
+BenchmarkTickerPool/syncpool-8        	  110748	     10863 ns/op	      32 B/op	       1 allocs/op
+BenchmarkTickerPool/pool-8            	  110414	     10867 ns/op	      32 B/op	       1 allocs/op
+PASS
+ok  	github.com/octu0/bp	3.994s
+```
+
+## `*time.Timer`: sync.Pool vs `TimerPool`
+
+```bash
+$ go test -bench=BenchmarkTimerPool -benchmem ./
+goos: darwin
+goarch: amd64
+pkg: github.com/octu0/bp
+cpu: Intel(R) Core(TM) i7-8569U CPU @ 2.80GHz
+BenchmarkTimerPool/default-8         	  115437	     10889 ns/op	     224 B/op	       4 allocs/op
+BenchmarkTimerPool/syncpool-8        	  107302	     11099 ns/op	      32 B/op	       1 allocs/op
+BenchmarkTimerPool/pool-8            	  106790	     11061 ns/op	      32 B/op	       1 allocs/op
+PASS
+ok  	github.com/octu0/bp	4.002s
 ```
 
 ## License
