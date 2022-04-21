@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"bytes"
 	"io"
+	"time"
 )
 
 type PoolSize interface {
@@ -48,4 +49,16 @@ type ImageNRGBAGetPut interface {
 type ImageYCbCrGetPut interface {
 	GetRef() *ImageYCbCrRef
 	Put([]byte) bool
+}
+
+type TickerGetPut interface {
+	GetRef(time.Duration) *TickerRef
+	Get(time.Duration) *time.Ticker
+	Put(*time.Ticker) bool
+}
+
+type TimerGetPut interface {
+	GetRef(time.Duration) *TimerRef
+	Get(time.Duration) *time.Timer
+	Put(*time.Timer) bool
 }

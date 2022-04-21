@@ -6,6 +6,7 @@ import (
 	"image"
 	"runtime"
 	"sync/atomic"
+	"time"
 )
 
 const (
@@ -20,6 +21,7 @@ type Ref interface {
 }
 
 func finalizeRef(ref Ref) {
+	runtime.SetFinalizer(ref, nil) // clear finalizer
 	ref.Release()
 }
 
@@ -31,20 +33,14 @@ var (
 	_ Ref = (*BufioWriterRef)(nil)
 	_ Ref = (*ImageRGBARef)(nil)
 	_ Ref = (*ImageYCbCrRef)(nil)
+	_ Ref = (*TickerRef)(nil)
+	_ Ref = (*TimerRef)(nil)
 )
 
 type ByteRef struct {
 	B      []byte
 	pool   ByteGetPut
 	closed int32
-}
-
-func newByteRef(data []byte, pool ByteGetPut) *ByteRef {
-	return &ByteRef{
-		B:      data,
-		pool:   pool,
-		closed: refInit,
-	}
 }
 
 func (b *ByteRef) Bytes() []byte {
@@ -61,8 +57,15 @@ func (b *ByteRef) setFinalizer() {
 
 func (b *ByteRef) Release() {
 	if atomic.CompareAndSwapInt32(&b.closed, refInit, refClosed) {
-		runtime.SetFinalizer(b, nil) // clear finalizer
 		b.pool.Put(b.B)
+	}
+}
+
+func newByteRef(data []byte, pool ByteGetPut) *ByteRef {
+	return &ByteRef{
+		B:      data,
+		pool:   pool,
+		closed: refInit,
 	}
 }
 
@@ -70,14 +73,6 @@ type BufferRef struct {
 	Buf    *bytes.Buffer
 	pool   BytesBufferGetPut
 	closed int32
-}
-
-func newBufferRef(data *bytes.Buffer, pool BytesBufferGetPut) *BufferRef {
-	return &BufferRef{
-		Buf:    data,
-		pool:   pool,
-		closed: refInit,
-	}
 }
 
 func (b *BufferRef) Buffer() *bytes.Buffer {
@@ -94,8 +89,15 @@ func (b *BufferRef) setFinalizer() {
 
 func (b *BufferRef) Release() {
 	if atomic.CompareAndSwapInt32(&b.closed, refInit, refClosed) {
-		runtime.SetFinalizer(b, nil) // clear
 		b.pool.Put(b.Buf)
+	}
+}
+
+func newBufferRef(data *bytes.Buffer, pool BytesBufferGetPut) *BufferRef {
+	return &BufferRef{
+		Buf:    data,
+		pool:   pool,
+		closed: refInit,
 	}
 }
 
@@ -103,14 +105,6 @@ type BufioReaderRef struct {
 	Buf    *bufio.Reader
 	pool   BufioReaderGetPut
 	closed int32
-}
-
-func newBufioReaderRef(data *bufio.Reader, pool BufioReaderGetPut) *BufioReaderRef {
-	return &BufioReaderRef{
-		Buf:    data,
-		pool:   pool,
-		closed: refInit,
-	}
 }
 
 func (b *BufioReaderRef) Reader() *bufio.Reader {
@@ -127,8 +121,15 @@ func (b *BufioReaderRef) setFinalizer() {
 
 func (b *BufioReaderRef) Release() {
 	if atomic.CompareAndSwapInt32(&b.closed, refInit, refClosed) {
-		runtime.SetFinalizer(b, nil) // clear
 		b.pool.Put(b.Buf)
+	}
+}
+
+func newBufioReaderRef(data *bufio.Reader, pool BufioReaderGetPut) *BufioReaderRef {
+	return &BufioReaderRef{
+		Buf:    data,
+		pool:   pool,
+		closed: refInit,
 	}
 }
 
@@ -136,14 +137,6 @@ type BufioWriterRef struct {
 	Buf    *bufio.Writer
 	pool   BufioWriterGetPut
 	closed int32
-}
-
-func newBufioWriterRef(data *bufio.Writer, pool BufioWriterGetPut) *BufioWriterRef {
-	return &BufioWriterRef{
-		Buf:    data,
-		pool:   pool,
-		closed: refInit,
-	}
 }
 
 func (b *BufioWriterRef) Writer() *bufio.Writer {
@@ -160,8 +153,15 @@ func (b *BufioWriterRef) setFinalizer() {
 
 func (b *BufioWriterRef) Release() {
 	if atomic.CompareAndSwapInt32(&b.closed, refInit, refClosed) {
-		runtime.SetFinalizer(b, nil) // clear
 		b.pool.Put(b.Buf)
+	}
+}
+
+func newBufioWriterRef(data *bufio.Writer, pool BufioWriterGetPut) *BufioWriterRef {
+	return &BufioWriterRef{
+		Buf:    data,
+		pool:   pool,
+		closed: refInit,
 	}
 }
 
@@ -170,15 +170,6 @@ type ImageRGBARef struct {
 	pix    []byte
 	pool   ImageRGBAGetPut
 	closed int32
-}
-
-func newImageRGBARef(pix []byte, img *image.RGBA, pool ImageRGBAGetPut) *ImageRGBARef {
-	return &ImageRGBARef{
-		Img:    img,
-		pix:    pix,
-		pool:   pool,
-		closed: refInit,
-	}
 }
 
 func (b *ImageRGBARef) Image() *image.RGBA {
@@ -195,8 +186,16 @@ func (b *ImageRGBARef) setFinalizer() {
 
 func (b *ImageRGBARef) Release() {
 	if atomic.CompareAndSwapInt32(&b.closed, refInit, refClosed) {
-		runtime.SetFinalizer(b, nil) // clear
 		b.pool.Put(b.pix)
+	}
+}
+
+func newImageRGBARef(pix []byte, img *image.RGBA, pool ImageRGBAGetPut) *ImageRGBARef {
+	return &ImageRGBARef{
+		Img:    img,
+		pix:    pix,
+		pool:   pool,
+		closed: refInit,
 	}
 }
 
@@ -205,15 +204,6 @@ type ImageNRGBARef struct {
 	pix    []byte
 	pool   ImageNRGBAGetPut
 	closed int32
-}
-
-func newImageNRGBARef(pix []byte, img *image.NRGBA, pool ImageNRGBAGetPut) *ImageNRGBARef {
-	return &ImageNRGBARef{
-		Img:    img,
-		pix:    pix,
-		pool:   pool,
-		closed: refInit,
-	}
 }
 
 func (b *ImageNRGBARef) Image() *image.NRGBA {
@@ -230,8 +220,16 @@ func (b *ImageNRGBARef) setFinalizer() {
 
 func (b *ImageNRGBARef) Release() {
 	if atomic.CompareAndSwapInt32(&b.closed, refInit, refClosed) {
-		runtime.SetFinalizer(b, nil) // clear
 		b.pool.Put(b.pix)
+	}
+}
+
+func newImageNRGBARef(pix []byte, img *image.NRGBA, pool ImageNRGBAGetPut) *ImageNRGBARef {
+	return &ImageNRGBARef{
+		Img:    img,
+		pix:    pix,
+		pool:   pool,
+		closed: refInit,
 	}
 }
 
@@ -240,15 +238,6 @@ type ImageYCbCrRef struct {
 	pix    []byte
 	pool   ImageYCbCrGetPut
 	closed int32
-}
-
-func newImageYCbCrRef(pix []byte, img *image.YCbCr, pool ImageYCbCrGetPut) *ImageYCbCrRef {
-	return &ImageYCbCrRef{
-		Img:    img,
-		pix:    pix,
-		pool:   pool,
-		closed: refInit,
-	}
 }
 
 func (b *ImageYCbCrRef) Image() *image.YCbCr {
@@ -265,7 +254,79 @@ func (b *ImageYCbCrRef) setFinalizer() {
 
 func (b *ImageYCbCrRef) Release() {
 	if atomic.CompareAndSwapInt32(&b.closed, refInit, refClosed) {
-		runtime.SetFinalizer(b, nil) // clear
 		b.pool.Put(b.pix)
+	}
+}
+
+func newImageYCbCrRef(pix []byte, img *image.YCbCr, pool ImageYCbCrGetPut) *ImageYCbCrRef {
+	return &ImageYCbCrRef{
+		Img:    img,
+		pix:    pix,
+		pool:   pool,
+		closed: refInit,
+	}
+}
+
+type TickerRef struct {
+	T      *time.Ticker
+	pool   TickerGetPut
+	closed int32
+}
+
+func (b *TickerRef) Ticker() *time.Ticker {
+	return b.T
+}
+
+func (b *TickerRef) isClosed() bool {
+	return atomic.LoadInt32(&b.closed) == refClosed
+}
+
+func (b *TickerRef) setFinalizer() {
+	runtime.SetFinalizer(b, finalizeRef)
+}
+
+func (b *TickerRef) Release() {
+	if atomic.CompareAndSwapInt32(&b.closed, refInit, refClosed) {
+		b.pool.Put(b.T)
+	}
+}
+
+func newTickerRef(ticker *time.Ticker, pool TickerGetPut) *TickerRef {
+	return &TickerRef{
+		T:      ticker,
+		pool:   pool,
+		closed: refInit,
+	}
+}
+
+type TimerRef struct {
+	T      *time.Timer
+	pool   TimerGetPut
+	closed int32
+}
+
+func (b *TimerRef) Ticker() *time.Timer {
+	return b.T
+}
+
+func (b *TimerRef) isClosed() bool {
+	return atomic.LoadInt32(&b.closed) == refClosed
+}
+
+func (b *TimerRef) setFinalizer() {
+	runtime.SetFinalizer(b, finalizeRef)
+}
+
+func (b *TimerRef) Release() {
+	if atomic.CompareAndSwapInt32(&b.closed, refInit, refClosed) {
+		b.pool.Put(b.T)
+	}
+}
+
+func newTimerRef(timer *time.Timer, pool TimerGetPut) *TimerRef {
+	return &TimerRef{
+		T:      timer,
+		pool:   pool,
+		closed: refInit,
 	}
 }

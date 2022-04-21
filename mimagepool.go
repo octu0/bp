@@ -5,90 +5,9 @@ import (
 	"sort"
 )
 
-type multiImageBufferPoolOptionFunc func(*multiImageBufferPoolOption)
-
-type multiImageBufferPoolOption struct {
-	tuples    []imagepoolTuple
-	poolFuncs []optionFunc
-}
-
-func newMultiImageBufferPoolOption() *multiImageBufferPoolOption {
-	return &multiImageBufferPoolOption{
-		tuples:    make([]imagepoolTuple, 0),
-		poolFuncs: make([]optionFunc, 0),
-	}
-}
-
-type imagepoolTuple struct {
-	poolSize int
-	rect     image.Rectangle
-}
-
-func MultiImagePoolSize(poolSize int, rect image.Rectangle) multiImageBufferPoolOptionFunc {
-	return func(opt *multiImageBufferPoolOption) {
-		opt.tuples = append(opt.tuples, imagepoolTuple{poolSize, rect})
-	}
-}
-
-func MultiImagePoolOption(funcs ...optionFunc) multiImageBufferPoolOptionFunc {
-	return func(opt *multiImageBufferPoolOption) {
-		opt.poolFuncs = append(opt.poolFuncs, funcs...)
-	}
-}
-
-func uniqImagepoolTuple(tuples []imagepoolTuple) []imagepoolTuple {
-	uniq := make(map[string]imagepoolTuple)
-	for _, t := range tuples {
-		if _, ok := uniq[t.rect.String()]; ok {
-			continue
-		}
-		uniq[t.rect.String()] = t
-	}
-	uniqTuples := make([]imagepoolTuple, 0, len(uniq))
-	for _, t := range uniq {
-		uniqTuples = append(uniqTuples, imagepoolTuple{t.poolSize, t.rect})
-	}
-	return uniqTuples
-}
-
-func sortTuples(tuples []imagepoolTuple) {
-	sort.Slice(tuples, func(a, b int) bool {
-		if tuples[a].rect.Dx() == tuples[b].rect.Dx() {
-			return tuples[a].rect.Dy() < tuples[b].rect.Dy()
-		}
-		return tuples[a].rect.Dx() < tuples[b].rect.Dx()
-	})
-}
-
-func rectIn(src, tgt image.Rectangle) bool {
-	if tgt.Dx() <= src.Dx() && tgt.Dy() <= src.Dy() {
-		return true
-	}
-	return false
-}
-
 type MultiImageRGBAPool struct {
 	tuples []imagepoolTuple
 	pools  []*ImageRGBAPool
-}
-
-func NewMultiImageRGBAPool(funcs ...multiImageBufferPoolOptionFunc) *MultiImageRGBAPool {
-	mOpt := newMultiImageBufferPoolOption()
-	for _, fn := range funcs {
-		fn(mOpt)
-	}
-
-	tuples := uniqImagepoolTuple(mOpt.tuples)
-	sortTuples(tuples)
-
-	pools := make([]*ImageRGBAPool, len(tuples))
-	for i, t := range tuples {
-		pools[i] = NewImageRGBAPool(t.poolSize, t.rect, mOpt.poolFuncs...)
-	}
-	return &MultiImageRGBAPool{
-		tuples: tuples,
-		pools:  pools,
-	}
 }
 
 func (b *MultiImageRGBAPool) find(r image.Rectangle) (*ImageRGBAPool, bool) {
@@ -273,4 +192,85 @@ func (b *MultiImageYCbCrPool) adjust(ref *ImageYCbCrRef, r image.Rectangle) {
 	ref.Img.Rect = r
 	ref.Img.YStride = w
 	ref.Img.CStride = cw
+}
+
+type multiImageBufferPoolOptionFunc func(*multiImageBufferPoolOption)
+
+type multiImageBufferPoolOption struct {
+	tuples    []imagepoolTuple
+	poolFuncs []optionFunc
+}
+
+type imagepoolTuple struct {
+	poolSize int
+	rect     image.Rectangle
+}
+
+func newMultiImageBufferPoolOption() *multiImageBufferPoolOption {
+	return &multiImageBufferPoolOption{
+		tuples:    make([]imagepoolTuple, 0),
+		poolFuncs: make([]optionFunc, 0),
+	}
+}
+
+func MultiImagePoolSize(poolSize int, rect image.Rectangle) multiImageBufferPoolOptionFunc {
+	return func(opt *multiImageBufferPoolOption) {
+		opt.tuples = append(opt.tuples, imagepoolTuple{poolSize, rect})
+	}
+}
+
+func MultiImagePoolOption(funcs ...optionFunc) multiImageBufferPoolOptionFunc {
+	return func(opt *multiImageBufferPoolOption) {
+		opt.poolFuncs = append(opt.poolFuncs, funcs...)
+	}
+}
+
+func uniqImagepoolTuple(tuples []imagepoolTuple) []imagepoolTuple {
+	uniq := make(map[string]imagepoolTuple)
+	for _, t := range tuples {
+		if _, ok := uniq[t.rect.String()]; ok {
+			continue
+		}
+		uniq[t.rect.String()] = t
+	}
+	uniqTuples := make([]imagepoolTuple, 0, len(uniq))
+	for _, t := range uniq {
+		uniqTuples = append(uniqTuples, imagepoolTuple{t.poolSize, t.rect})
+	}
+	return uniqTuples
+}
+
+func sortTuples(tuples []imagepoolTuple) {
+	sort.Slice(tuples, func(a, b int) bool {
+		if tuples[a].rect.Dx() == tuples[b].rect.Dx() {
+			return tuples[a].rect.Dy() < tuples[b].rect.Dy()
+		}
+		return tuples[a].rect.Dx() < tuples[b].rect.Dx()
+	})
+}
+
+func NewMultiImageRGBAPool(funcs ...multiImageBufferPoolOptionFunc) *MultiImageRGBAPool {
+	mOpt := newMultiImageBufferPoolOption()
+	for _, fn := range funcs {
+		fn(mOpt)
+	}
+
+	tuples := uniqImagepoolTuple(mOpt.tuples)
+	sortTuples(tuples)
+
+	pools := make([]*ImageRGBAPool, len(tuples))
+	for i, t := range tuples {
+		pools[i] = NewImageRGBAPool(t.poolSize, t.rect, mOpt.poolFuncs...)
+	}
+	return &MultiImageRGBAPool{
+		tuples: tuples,
+		pools:  pools,
+	}
+}
+
+func rectIn(src, tgt image.Rectangle) bool {
+	if tgt.Dx() <= src.Dx() && tgt.Dy() <= src.Dy() {
+		return true
+	}
+	return false
 }

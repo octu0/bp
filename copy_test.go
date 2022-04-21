@@ -3,7 +3,6 @@ package bp
 import (
 	"bytes"
 	"io"
-	"io/ioutil"
 	"testing"
 )
 
@@ -71,14 +70,14 @@ func BenchmarkIoCopyPoolFixedSize(b *testing.B) {
 func BenchmarkIoReadAllIoUtil(b *testing.B) {
 	for i := 0; i < b.N; i += 1 {
 		r := newTestReader()
-		ioutil.ReadAll(r)
+		_, _ = io.ReadAll(r)
 	}
 }
 
 func BenchmarkIoReadAllPoolDefault(b *testing.B) {
 	for i := 0; i < b.N; i += 1 {
 		r := newTestReader()
-		ReadAll(r)
+		_, _ = ReadAll(r)
 	}
 }
 
@@ -86,7 +85,7 @@ func BenchmarkIoReadAllPoolFixedSize(b *testing.B) {
 	cp := NewCopyIOPool(100, 16*1024)
 	for i := 0; i < b.N; i += 1 {
 		r := newTestReader()
-		cp.ReadAll(r)
+		_, _ = cp.ReadAll(r)
 	}
 }
 

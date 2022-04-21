@@ -17,25 +17,6 @@ type ImageRGBAPool struct {
 	length int
 }
 
-func NewImageRGBAPool(poolSize int, rect image.Rectangle, funcs ...optionFunc) *ImageRGBAPool {
-	opt := newOption()
-	for _, fn := range funcs {
-		fn(opt)
-	}
-
-	b := &ImageRGBAPool{
-		pool: make(chan []byte, poolSize),
-		// other field initialize to b.init(rect, sample)
-	}
-	b.init(rect)
-
-	if opt.preload {
-		b.preload(opt.preloadRate)
-	}
-
-	return b
-}
-
 func (b *ImageRGBAPool) init(rect image.Rectangle) {
 	b.rect = rect
 	b.width = rect.Dx()
@@ -99,24 +80,27 @@ func (b *ImageRGBAPool) Cap() int {
 	return cap(b.pool)
 }
 
-type ImageNRGBAPool struct {
-	ImageRGBAPool
-}
-
-func NewImageNRGBAPool(poolSize int, rect image.Rectangle, funcs ...optionFunc) *ImageNRGBAPool {
+func NewImageRGBAPool(poolSize int, rect image.Rectangle, funcs ...optionFunc) *ImageRGBAPool {
 	opt := newOption()
 	for _, fn := range funcs {
 		fn(opt)
 	}
 
-	b := new(ImageNRGBAPool)
-	b.pool = make(chan []byte, poolSize)
+	b := &ImageRGBAPool{
+		pool: make(chan []byte, poolSize),
+		// other field initialize to b.init(rect, sample)
+	}
 	b.init(rect)
 
 	if opt.preload {
 		b.preload(opt.preloadRate)
 	}
+
 	return b
+}
+
+type ImageNRGBAPool struct {
+	ImageRGBAPool
 }
 
 func (b *ImageNRGBAPool) createImageNRGBARef(pix []byte, pool *ImageNRGBAPool) *ImageNRGBARef {
@@ -141,6 +125,22 @@ func (b *ImageNRGBAPool) GetRef() *ImageNRGBARef {
 	return b.createImageNRGBARef(pix, b)
 }
 
+func NewImageNRGBAPool(poolSize int, rect image.Rectangle, funcs ...optionFunc) *ImageNRGBAPool {
+	opt := newOption()
+	for _, fn := range funcs {
+		fn(opt)
+	}
+
+	b := new(ImageNRGBAPool)
+	b.pool = make(chan []byte, poolSize)
+	b.init(rect)
+
+	if opt.preload {
+		b.preload(opt.preloadRate)
+	}
+	return b
+}
+
 type ImageYCbCrPool struct {
 	pool     chan []byte
 	rect     image.Rectangle
@@ -151,38 +151,6 @@ type ImageYCbCrPool struct {
 	strideY  int
 	strideUV int
 	length   int
-}
-
-func yuvSize(rect image.Rectangle, sample image.YCbCrSubsampleRatio) (int, int) {
-	w, h := rect.Dx(), rect.Dy()
-	if sample == image.YCbCrSubsampleRatio420 {
-		cw := ((rect.Max.X + 1) / 2) - (rect.Min.X / 2)
-		ch := ((rect.Max.Y + 1) / 2) - (rect.Min.Y / 2)
-		return cw, ch
-	}
-	// 4:4:4
-	return w, h
-}
-
-func NewImageYCbCrPool(poolSize int, rect image.Rectangle, sample image.YCbCrSubsampleRatio, funcs ...optionFunc) *ImageYCbCrPool {
-	opt := newOption()
-	for _, fn := range funcs {
-		fn(opt)
-	}
-
-	if sample != image.YCbCrSubsampleRatio420 {
-		panic(notyetSupportedSampleRate)
-	}
-	b := &ImageYCbCrPool{
-		pool: make(chan []byte, poolSize),
-		// other field initialize to b.init(rect, sample)
-	}
-	b.init(rect, sample)
-
-	if opt.preload {
-		b.preload(opt.preloadRate)
-	}
-	return b
 }
 
 func (b *ImageYCbCrPool) init(rect image.Rectangle, sample image.YCbCrSubsampleRatio) {
@@ -270,6 +238,38 @@ func (b *ImageYCbCrPool) Cap() int {
 	return cap(b.pool)
 }
 
+func NewImageYCbCrPool(poolSize int, rect image.Rectangle, sample image.YCbCrSubsampleRatio, funcs ...optionFunc) *ImageYCbCrPool {
+	opt := newOption()
+	for _, fn := range funcs {
+		fn(opt)
+	}
+
+	if sample != image.YCbCrSubsampleRatio420 {
+		panic(notyetSupportedSampleRate)
+	}
+	b := &ImageYCbCrPool{
+		pool: make(chan []byte, poolSize),
+		// other field initialize to b.init(rect, sample)
+	}
+	b.init(rect, sample)
+
+	if opt.preload {
+		b.preload(opt.preloadRate)
+	}
+	return b
+}
+
 func imageRGBAStride(rect image.Rectangle) int {
 	return rect.Dx() * 4
+}
+
+func yuvSize(rect image.Rectangle, sample image.YCbCrSubsampleRatio) (int, int) {
+	w, h := rect.Dx(), rect.Dy()
+	if sample == image.YCbCrSubsampleRatio420 {
+		cw := ((rect.Max.X + 1) / 2) - (rect.Min.X / 2)
+		ch := ((rect.Max.Y + 1) / 2) - (rect.Min.Y / 2)
+		return cw, ch
+	}
+	// 4:4:4
+	return w, h
 }
