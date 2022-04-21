@@ -30,7 +30,7 @@ func (c *CopyIOPool) ReadAll(src io.Reader) ([]byte, error) {
 	defer c.pool.Put(buf)
 
 	size := int64(0)
-	b := bytes.NewBuffer(make([]byte, 0, c.pool.bufSize))
+	out := bytes.NewBuffer(make([]byte, 0, c.pool.bufSize))
 	for {
 		n, err := src.Read(buf)
 		if n < 0 {
@@ -38,12 +38,12 @@ func (c *CopyIOPool) ReadAll(src io.Reader) ([]byte, error) {
 		}
 		size += int64(n)
 		if err == io.EOF {
-			return b.Bytes(), nil
+			return out.Bytes(), nil
 		}
 		if err != nil {
 			return []byte{}, err
 		}
-		b.Write(buf[:n])
+		out.Write(buf[:n])
 	}
 }
 
