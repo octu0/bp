@@ -5,76 +5,9 @@ import (
 	"sort"
 )
 
-type multiBufferPoolOptionFunc func(*multiBufferPoolOption)
-
-type multiBufferPoolOption struct {
-	tuples    []bufferpoolTuple
-	poolFuncs []optionFunc
-}
-
-func newMultiBufferPoolOption() *multiBufferPoolOption {
-	return &multiBufferPoolOption{
-		tuples:    make([]bufferpoolTuple, 0),
-		poolFuncs: make([]optionFunc, 0),
-	}
-}
-
-type bufferpoolTuple struct {
-	poolSize, bufSize int
-}
-
-func MultiBufferPoolSize(poolSize int, bufSize int) multiBufferPoolOptionFunc {
-	return func(opt *multiBufferPoolOption) {
-		opt.tuples = append(opt.tuples, bufferpoolTuple{poolSize, bufSize})
-	}
-}
-
-func MultiBufferPoolOption(funcs ...optionFunc) multiBufferPoolOptionFunc {
-	return func(opt *multiBufferPoolOption) {
-		opt.poolFuncs = append(opt.poolFuncs, funcs...)
-	}
-}
-
-func uniqBufferpoolTuple(tuples []bufferpoolTuple) []bufferpoolTuple {
-	uniq := make(map[int]bufferpoolTuple)
-	for _, t := range tuples {
-		if _, ok := uniq[t.bufSize]; ok {
-			continue
-		}
-		uniq[t.bufSize] = t
-	}
-	uniqTuples := make([]bufferpoolTuple, 0, len(uniq))
-	for _, t := range uniq {
-		uniqTuples = append(uniqTuples, bufferpoolTuple{t.poolSize, t.bufSize})
-	}
-	return uniqTuples
-}
-
 type MultiBufferPool struct {
 	tuples []bufferpoolTuple
 	pools  []*BufferPool
-}
-
-func NewMultiBufferPool(funcs ...multiBufferPoolOptionFunc) *MultiBufferPool {
-	mOpt := newMultiBufferPoolOption()
-	for _, fn := range funcs {
-		fn(mOpt)
-	}
-
-	tuples := uniqBufferpoolTuple(mOpt.tuples)
-	poolFuncs := mOpt.poolFuncs
-
-	sort.Slice(tuples, func(a, b int) bool {
-		return tuples[a].bufSize < tuples[b].bufSize
-	})
-	pools := make([]*BufferPool, len(tuples))
-	for i, t := range tuples {
-		pools[i] = NewBufferPool(t.poolSize, t.bufSize, poolFuncs...)
-	}
-	return &MultiBufferPool{
-		tuples: tuples,
-		pools:  pools,
-	}
 }
 
 func (b *MultiBufferPool) find(size int) (*BufferPool, bool) {
@@ -113,4 +46,71 @@ func (b *MultiBufferPool) Put(data *bytes.Buffer) bool {
 	}
 	// discard
 	return false
+}
+
+type multiBufferPoolOptionFunc func(*multiBufferPoolOption)
+
+type multiBufferPoolOption struct {
+	tuples    []bufferpoolTuple
+	poolFuncs []optionFunc
+}
+
+type bufferpoolTuple struct {
+	poolSize, bufSize int
+}
+
+func newMultiBufferPoolOption() *multiBufferPoolOption {
+	return &multiBufferPoolOption{
+		tuples:    make([]bufferpoolTuple, 0),
+		poolFuncs: make([]optionFunc, 0),
+	}
+}
+
+func MultiBufferPoolSize(poolSize int, bufSize int) multiBufferPoolOptionFunc {
+	return func(opt *multiBufferPoolOption) {
+		opt.tuples = append(opt.tuples, bufferpoolTuple{poolSize, bufSize})
+	}
+}
+
+func MultiBufferPoolOption(funcs ...optionFunc) multiBufferPoolOptionFunc {
+	return func(opt *multiBufferPoolOption) {
+		opt.poolFuncs = append(opt.poolFuncs, funcs...)
+	}
+}
+
+func uniqBufferpoolTuple(tuples []bufferpoolTuple) []bufferpoolTuple {
+	uniq := make(map[int]bufferpoolTuple)
+	for _, t := range tuples {
+		if _, ok := uniq[t.bufSize]; ok {
+			continue
+		}
+		uniq[t.bufSize] = t
+	}
+	uniqTuples := make([]bufferpoolTuple, 0, len(uniq))
+	for _, t := range uniq {
+		uniqTuples = append(uniqTuples, bufferpoolTuple{t.poolSize, t.bufSize})
+	}
+	return uniqTuples
+}
+
+func NewMultiBufferPool(funcs ...multiBufferPoolOptionFunc) *MultiBufferPool {
+	mOpt := newMultiBufferPoolOption()
+	for _, fn := range funcs {
+		fn(mOpt)
+	}
+
+	tuples := uniqBufferpoolTuple(mOpt.tuples)
+	poolFuncs := mOpt.poolFuncs
+
+	sort.Slice(tuples, func(a, b int) bool {
+		return tuples[a].bufSize < tuples[b].bufSize
+	})
+	pools := make([]*BufferPool, len(tuples))
+	for i, t := range tuples {
+		pools[i] = NewBufferPool(t.poolSize, t.bufSize, poolFuncs...)
+	}
+	return &MultiBufferPool{
+		tuples: tuples,
+		pools:  pools,
+	}
 }

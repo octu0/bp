@@ -1,3 +1,4 @@
+//go:build aix || darwin || dragonfly || freebsd || linux || netbsd || openbsd || solaris
 // +build aix darwin dragonfly freebsd linux netbsd openbsd solaris
 
 package bp
@@ -14,49 +15,10 @@ const (
 	mmapFlag                 = unix.MAP_ANON | unix.MAP_PRIVATE
 )
 
-func mmapAlign(size int, align int) int {
-	return ((size + align) >> 3) << 3
-}
-
-func defaultMmapAlign(size int) int {
-	// default aligment 32-byte
-	return mmapAlign(size, DefaultMmapAlignment)
-}
-
 type MmapBytePool struct {
 	pool      chan []byte
 	bufSize   int
 	alignSize int
-}
-
-func NewMmapBytePool(poolSize, bufSize int, funcs ...optionFunc) *MmapBytePool {
-	opt := newOption()
-	for _, fn := range funcs {
-		fn(opt)
-	}
-
-	b := &MmapBytePool{
-		pool:      make(chan []byte, poolSize),
-		bufSize:   bufSize,
-		alignSize: defaultMmapAlign(bufSize),
-	}
-
-	if opt.preload {
-		b.preload(opt.preloadRate)
-	}
-
-	runtime.SetFinalizer(b, finalizeMmapBytePool)
-
-	return b
-}
-
-func finalizeMmapBytePool(b *MmapBytePool) {
-	runtime.SetFinalizer(b, nil)
-
-	close(b.pool)
-	for data := range b.pool {
-		unix.Munmap(data)
-	}
 }
 
 func (b *MmapBytePool) preload(rate float64) {
@@ -119,4 +81,43 @@ func (b *MmapBytePool) Len() int {
 
 func (b *MmapBytePool) Cap() int {
 	return cap(b.pool)
+}
+
+func NewMmapBytePool(poolSize, bufSize int, funcs ...optionFunc) *MmapBytePool {
+	opt := newOption()
+	for _, fn := range funcs {
+		fn(opt)
+	}
+
+	b := &MmapBytePool{
+		pool:      make(chan []byte, poolSize),
+		bufSize:   bufSize,
+		alignSize: defaultMmapAlign(bufSize),
+	}
+
+	if opt.preload {
+		b.preload(opt.preloadRate)
+	}
+
+	runtime.SetFinalizer(b, finalizeMmapBytePool)
+
+	return b
+}
+
+func finalizeMmapBytePool(b *MmapBytePool) {
+	runtime.SetFinalizer(b, nil)
+
+	close(b.pool)
+	for data := range b.pool {
+		unix.Munmap(data)
+	}
+}
+
+func mmapAlign(size int, align int) int {
+	return ((size + align) >> 3) << 3
+}
+
+func defaultMmapAlign(size int) int {
+	// default aligment 32-byte
+	return mmapAlign(size, DefaultMmapAlignment)
 }

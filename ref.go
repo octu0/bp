@@ -39,14 +39,6 @@ type ByteRef struct {
 	closed int32
 }
 
-func newByteRef(data []byte, pool ByteGetPut) *ByteRef {
-	return &ByteRef{
-		B:      data,
-		pool:   pool,
-		closed: refInit,
-	}
-}
-
 func (b *ByteRef) Bytes() []byte {
 	return b.B
 }
@@ -66,18 +58,18 @@ func (b *ByteRef) Release() {
 	}
 }
 
+func newByteRef(data []byte, pool ByteGetPut) *ByteRef {
+	return &ByteRef{
+		B:      data,
+		pool:   pool,
+		closed: refInit,
+	}
+}
+
 type BufferRef struct {
 	Buf    *bytes.Buffer
 	pool   BytesBufferGetPut
 	closed int32
-}
-
-func newBufferRef(data *bytes.Buffer, pool BytesBufferGetPut) *BufferRef {
-	return &BufferRef{
-		Buf:    data,
-		pool:   pool,
-		closed: refInit,
-	}
 }
 
 func (b *BufferRef) Buffer() *bytes.Buffer {
@@ -99,18 +91,18 @@ func (b *BufferRef) Release() {
 	}
 }
 
-type BufioReaderRef struct {
-	Buf    *bufio.Reader
-	pool   BufioReaderGetPut
-	closed int32
-}
-
-func newBufioReaderRef(data *bufio.Reader, pool BufioReaderGetPut) *BufioReaderRef {
-	return &BufioReaderRef{
+func newBufferRef(data *bytes.Buffer, pool BytesBufferGetPut) *BufferRef {
+	return &BufferRef{
 		Buf:    data,
 		pool:   pool,
 		closed: refInit,
 	}
+}
+
+type BufioReaderRef struct {
+	Buf    *bufio.Reader
+	pool   BufioReaderGetPut
+	closed int32
 }
 
 func (b *BufioReaderRef) Reader() *bufio.Reader {
@@ -132,18 +124,18 @@ func (b *BufioReaderRef) Release() {
 	}
 }
 
-type BufioWriterRef struct {
-	Buf    *bufio.Writer
-	pool   BufioWriterGetPut
-	closed int32
-}
-
-func newBufioWriterRef(data *bufio.Writer, pool BufioWriterGetPut) *BufioWriterRef {
-	return &BufioWriterRef{
+func newBufioReaderRef(data *bufio.Reader, pool BufioReaderGetPut) *BufioReaderRef {
+	return &BufioReaderRef{
 		Buf:    data,
 		pool:   pool,
 		closed: refInit,
 	}
+}
+
+type BufioWriterRef struct {
+	Buf    *bufio.Writer
+	pool   BufioWriterGetPut
+	closed int32
 }
 
 func (b *BufioWriterRef) Writer() *bufio.Writer {
@@ -165,20 +157,19 @@ func (b *BufioWriterRef) Release() {
 	}
 }
 
+func newBufioWriterRef(data *bufio.Writer, pool BufioWriterGetPut) *BufioWriterRef {
+	return &BufioWriterRef{
+		Buf:    data,
+		pool:   pool,
+		closed: refInit,
+	}
+}
+
 type ImageRGBARef struct {
 	Img    *image.RGBA
 	pix    []byte
 	pool   ImageRGBAGetPut
 	closed int32
-}
-
-func newImageRGBARef(pix []byte, img *image.RGBA, pool ImageRGBAGetPut) *ImageRGBARef {
-	return &ImageRGBARef{
-		Img:    img,
-		pix:    pix,
-		pool:   pool,
-		closed: refInit,
-	}
 }
 
 func (b *ImageRGBARef) Image() *image.RGBA {
@@ -200,20 +191,20 @@ func (b *ImageRGBARef) Release() {
 	}
 }
 
-type ImageNRGBARef struct {
-	Img    *image.NRGBA
-	pix    []byte
-	pool   ImageNRGBAGetPut
-	closed int32
-}
-
-func newImageNRGBARef(pix []byte, img *image.NRGBA, pool ImageNRGBAGetPut) *ImageNRGBARef {
-	return &ImageNRGBARef{
+func newImageRGBARef(pix []byte, img *image.RGBA, pool ImageRGBAGetPut) *ImageRGBARef {
+	return &ImageRGBARef{
 		Img:    img,
 		pix:    pix,
 		pool:   pool,
 		closed: refInit,
 	}
+}
+
+type ImageNRGBARef struct {
+	Img    *image.NRGBA
+	pix    []byte
+	pool   ImageNRGBAGetPut
+	closed int32
 }
 
 func (b *ImageNRGBARef) Image() *image.NRGBA {
@@ -235,20 +226,20 @@ func (b *ImageNRGBARef) Release() {
 	}
 }
 
-type ImageYCbCrRef struct {
-	Img    *image.YCbCr
-	pix    []byte
-	pool   ImageYCbCrGetPut
-	closed int32
-}
-
-func newImageYCbCrRef(pix []byte, img *image.YCbCr, pool ImageYCbCrGetPut) *ImageYCbCrRef {
-	return &ImageYCbCrRef{
+func newImageNRGBARef(pix []byte, img *image.NRGBA, pool ImageNRGBAGetPut) *ImageNRGBARef {
+	return &ImageNRGBARef{
 		Img:    img,
 		pix:    pix,
 		pool:   pool,
 		closed: refInit,
 	}
+}
+
+type ImageYCbCrRef struct {
+	Img    *image.YCbCr
+	pix    []byte
+	pool   ImageYCbCrGetPut
+	closed int32
 }
 
 func (b *ImageYCbCrRef) Image() *image.YCbCr {
@@ -267,5 +258,14 @@ func (b *ImageYCbCrRef) Release() {
 	if atomic.CompareAndSwapInt32(&b.closed, refInit, refClosed) {
 		runtime.SetFinalizer(b, nil) // clear
 		b.pool.Put(b.pix)
+	}
+}
+
+func newImageYCbCrRef(pix []byte, img *image.YCbCr, pool ImageYCbCrGetPut) *ImageYCbCrRef {
+	return &ImageYCbCrRef{
+		Img:    img,
+		pix:    pix,
+		pool:   pool,
+		closed: refInit,
 	}
 }

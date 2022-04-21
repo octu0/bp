@@ -15,32 +15,6 @@ type BufioReaderPool struct {
 	strict  bool
 }
 
-func NewBufioReaderPool(poolSize int, funcs ...optionFunc) *BufioReaderPool {
-	return newBufioReaderPool(poolSize, defaultBufioSize, false, funcs...)
-}
-
-func NewBufioReaderSizePool(poolSize int, bufSize int, funcs ...optionFunc) *BufioReaderPool {
-	return newBufioReaderPool(poolSize, bufSize, true, funcs...)
-}
-
-func newBufioReaderPool(poolSize int, bufSize int, sizeStrict bool, funcs ...optionFunc) *BufioReaderPool {
-	opt := newOption()
-	for _, fn := range funcs {
-		fn(opt)
-	}
-
-	b := &BufioReaderPool{
-		pool:    make(chan *bufio.Reader, poolSize),
-		bufSize: bufSize,
-		strict:  sizeStrict,
-	}
-
-	if opt.preload {
-		b.preload(opt.preloadRate)
-	}
-	return b
-}
-
 func (b *BufioReaderPool) GetRef(r io.Reader) *BufioReaderRef {
 	data := b.Get(r)
 
@@ -104,28 +78,22 @@ func (b *BufioReaderPool) Cap() int {
 	return cap(b.pool)
 }
 
-type BufioWriterPool struct {
-	pool    chan *bufio.Writer
-	bufSize int
-	strict  bool
+func NewBufioReaderPool(poolSize int, funcs ...optionFunc) *BufioReaderPool {
+	return newBufioReaderPool(poolSize, defaultBufioSize, false, funcs...)
 }
 
-func NewBufioWriterPool(poolSize int, funcs ...optionFunc) *BufioWriterPool {
-	return newBufioWriterPool(poolSize, defaultBufioSize, false, funcs...)
+func NewBufioReaderSizePool(poolSize int, bufSize int, funcs ...optionFunc) *BufioReaderPool {
+	return newBufioReaderPool(poolSize, bufSize, true, funcs...)
 }
 
-func NewBufioWriterSizePool(poolSize int, bufSize int, funcs ...optionFunc) *BufioWriterPool {
-	return newBufioWriterPool(poolSize, bufSize, true, funcs...)
-}
-
-func newBufioWriterPool(poolSize int, bufSize int, sizeStrict bool, funcs ...optionFunc) *BufioWriterPool {
+func newBufioReaderPool(poolSize int, bufSize int, sizeStrict bool, funcs ...optionFunc) *BufioReaderPool {
 	opt := newOption()
 	for _, fn := range funcs {
 		fn(opt)
 	}
 
-	b := &BufioWriterPool{
-		pool:    make(chan *bufio.Writer, poolSize),
+	b := &BufioReaderPool{
+		pool:    make(chan *bufio.Reader, poolSize),
 		bufSize: bufSize,
 		strict:  sizeStrict,
 	}
@@ -134,6 +102,12 @@ func newBufioWriterPool(poolSize int, bufSize int, sizeStrict bool, funcs ...opt
 		b.preload(opt.preloadRate)
 	}
 	return b
+}
+
+type BufioWriterPool struct {
+	pool    chan *bufio.Writer
+	bufSize int
+	strict  bool
 }
 
 func (b *BufioWriterPool) GetRef(w io.Writer) *BufioWriterRef {
@@ -197,4 +171,30 @@ func (b *BufioWriterPool) Len() int {
 
 func (b *BufioWriterPool) Cap() int {
 	return cap(b.pool)
+}
+
+func NewBufioWriterPool(poolSize int, funcs ...optionFunc) *BufioWriterPool {
+	return newBufioWriterPool(poolSize, defaultBufioSize, false, funcs...)
+}
+
+func NewBufioWriterSizePool(poolSize int, bufSize int, funcs ...optionFunc) *BufioWriterPool {
+	return newBufioWriterPool(poolSize, bufSize, true, funcs...)
+}
+
+func newBufioWriterPool(poolSize int, bufSize int, sizeStrict bool, funcs ...optionFunc) *BufioWriterPool {
+	opt := newOption()
+	for _, fn := range funcs {
+		fn(opt)
+	}
+
+	b := &BufioWriterPool{
+		pool:    make(chan *bufio.Writer, poolSize),
+		bufSize: bufSize,
+		strict:  sizeStrict,
+	}
+
+	if opt.preload {
+		b.preload(opt.preloadRate)
+	}
+	return b
 }

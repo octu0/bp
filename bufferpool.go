@@ -11,33 +11,6 @@ type BufferPool struct {
 	autoGrowCap bool
 }
 
-func NewBufferPool(poolSize int, bufSize int, funcs ...optionFunc) *BufferPool {
-	opt := newOption()
-	for _, fn := range funcs {
-		fn(opt)
-	}
-
-	b := &BufferPool{
-		pool:       make(chan *bytes.Buffer, poolSize),
-		bufSize:    bufSize,
-		maxBufSize: int(opt.maxBufSizeFactor * float64(bufSize)),
-	}
-
-	if b.maxBufSize < 1 {
-		b.maxBufSize = bufSize
-	}
-
-	if opt.preload {
-		b.preload(opt.preloadRate)
-	}
-
-	if opt.autoGrow {
-		b.autoGrowCap = opt.autoGrow
-	}
-
-	return b
-}
-
 func (b *BufferPool) GetRef() *BufferRef {
 	data := b.Get()
 
@@ -104,4 +77,31 @@ func (b *BufferPool) Len() int {
 
 func (b *BufferPool) Cap() int {
 	return cap(b.pool)
+}
+
+func NewBufferPool(poolSize int, bufSize int, funcs ...optionFunc) *BufferPool {
+	opt := newOption()
+	for _, fn := range funcs {
+		fn(opt)
+	}
+
+	b := &BufferPool{
+		pool:       make(chan *bytes.Buffer, poolSize),
+		bufSize:    bufSize,
+		maxBufSize: int(opt.maxBufSizeFactor * float64(bufSize)),
+	}
+
+	if b.maxBufSize < 1 {
+		b.maxBufSize = bufSize
+	}
+
+	if opt.preload {
+		b.preload(opt.preloadRate)
+	}
+
+	if opt.autoGrow {
+		b.autoGrowCap = opt.autoGrow
+	}
+
+	return b
 }

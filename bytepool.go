@@ -6,29 +6,6 @@ type BytePool struct {
 	maxBufSize int
 }
 
-func NewBytePool(poolSize int, bufSize int, funcs ...optionFunc) *BytePool {
-	opt := newOption()
-	for _, fn := range funcs {
-		fn(opt)
-	}
-
-	b := &BytePool{
-		pool:       make(chan []byte, poolSize),
-		bufSize:    bufSize,
-		maxBufSize: int(opt.maxBufSizeFactor * float64(bufSize)),
-	}
-
-	if b.maxBufSize < 1 {
-		b.maxBufSize = bufSize
-	}
-
-	if opt.preload {
-		b.preload(opt.preloadRate)
-	}
-
-	return b
-}
-
 func (b *BytePool) GetRef() *ByteRef {
 	data := b.Get()
 
@@ -84,4 +61,27 @@ func (b *BytePool) Len() int {
 
 func (b *BytePool) Cap() int {
 	return cap(b.pool)
+}
+
+func NewBytePool(poolSize int, bufSize int, funcs ...optionFunc) *BytePool {
+	opt := newOption()
+	for _, fn := range funcs {
+		fn(opt)
+	}
+
+	b := &BytePool{
+		pool:       make(chan []byte, poolSize),
+		bufSize:    bufSize,
+		maxBufSize: int(opt.maxBufSizeFactor * float64(bufSize)),
+	}
+
+	if b.maxBufSize < 1 {
+		b.maxBufSize = bufSize
+	}
+
+	if opt.preload {
+		b.preload(opt.preloadRate)
+	}
+
+	return b
 }

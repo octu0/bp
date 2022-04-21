@@ -14,24 +14,8 @@ var (
 	ErrIOReadNagativeRead = errors.New("negative count from io.Read")
 )
 
-func Copy(dst io.Writer, src io.Reader) (int64, error) {
-	c := NewCopyIOPool(1, defaultCopyIOSize)
-	return c.Copy(dst, src)
-}
-
-func ReadAll(src io.Reader) ([]byte, error) {
-	c := NewCopyIOPool(1, defaultCopyIOSize)
-	return c.ReadAll(src)
-}
-
 type CopyIOPool struct {
 	pool *BytePool
-}
-
-func NewCopyIOPool(poolSize int, bufSize int, funcs ...optionFunc) *CopyIOPool {
-	return &CopyIOPool{
-		pool: NewBytePool(poolSize, bufSize, funcs...),
-	}
 }
 
 func (c *CopyIOPool) Copy(dst io.Writer, src io.Reader) (int64, error) {
@@ -69,4 +53,20 @@ func (c *CopyIOPool) Len() int {
 
 func (c *CopyIOPool) Cap() int {
 	return c.pool.Cap()
+}
+
+func NewCopyIOPool(poolSize int, bufSize int, funcs ...optionFunc) *CopyIOPool {
+	return &CopyIOPool{
+		pool: NewBytePool(poolSize, bufSize, funcs...),
+	}
+}
+
+func Copy(dst io.Writer, src io.Reader) (int64, error) {
+	c := NewCopyIOPool(1, defaultCopyIOSize)
+	return c.Copy(dst, src)
+}
+
+func ReadAll(src io.Reader) ([]byte, error) {
+	c := NewCopyIOPool(1, defaultCopyIOSize)
+	return c.ReadAll(src)
 }
